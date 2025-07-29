@@ -11,4 +11,4 @@ NGIR7BFL.dta, NGBR7BFL.dta, and NGPR7BFL.dta, from the 2018 Nigeria Demographic 
 hh.sav, wm.sav, and bh.sav, from the 2021 Nigeria Multiple Indicator Cluster Survey by UNICEF MICS, available at: https://mics.unicef.org
 
 The m-file and do-files run automatically from top to bottom, but the user may need to adjust the file paths for reading the data and saving the outputs. The m-file requires some nested functions (also within this repository) to produce tables and some part of the analysis.
-# U5M_teaching
+# U5M_Nigeria
