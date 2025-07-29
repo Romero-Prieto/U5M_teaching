@@ -4,7 +4,6 @@ local      pATh      = "/Users/lshjr3/Documents/SARMAAN"
 
 local      fILe      = "Mortality"
 local      Mortality = "Mortality female pregnancy"
-local      AMR       = "g_polygon mother_information child_info" 
 
 foreach f of local fILe {
 	foreach sheet of local `f' {
@@ -13,9 +12,9 @@ foreach f of local fILe {
 		generate   cluster = ""
 		save      ``f'_`sheet'', replace
 		
-		forvalues cluster = 1(1)2 {		
+		forvalues cluster = 1(1)3 {		
 			quiet import excel "`pATh'/`f'_`cluster'.xlsx", sheet("`sheet'") firstrow case(lower) allstring clear
-			generate   cluster = "`cluster'"
+			generate   cluster = "C-`cluster'"
 			append     using ``f'_`sheet''
 			save      ``f'_`sheet'', replace
 			}
@@ -109,6 +108,21 @@ order     `FPH'
 rename     _parent_index moTHer
 merge m:1  cluster moTHer using `mother', nogenerate keep(master match) keepusing(sUBmiSSion)
 rename     q117 sex
+
+replace    q120inwhatyear     = substr(q120inwhatyear,1,4)
+replace    q120inwhatday      = substr("0" + q120inwhatday,-2,.)                             if q120inwhatday != "" 
+local      lISt               = "January February March April May June July August September October November December"
+foreach m of local lISt {
+	local      month              = `month' + 1
+	replace    q120inwhatmonth    = substr("0`month'",-2,.) if q120inwhatmont == "`m'"
+	}
+generate   imputed_date       = "preg_end"                                                   if q120inwhatyear != "" & (q120inwhatday   == "" | q120inwhatmonth == "")
+replace    q120inwhatday      = "01"                                                         if q120inwhatyear != "" &  q120inwhatday   == ""
+replace    q120inwhatmonth    = "01"                                                         if q120inwhatyear != "" &  q120inwhatmonth == ""
+replace    q120inwhatyear     = q120inwhatyear + "-" + q120inwhatmonth + "-" + q120inwhatday if q120inwhatyear != ""
+replace    q120onwhatdaymon   = q120inwhatyear                                               if q120inwhatyear != ""
+drop       q120inwhatyear q120inwhatmonth q120inwhatday
+	
 
 local      lISt               = "q119adateofbirthofchild q119bdateofbirthofchild q119cdateofbirthofchild q120onwhatdaymonthandye"
 order     `lISt'
@@ -259,14 +273,13 @@ label      variable InterviewRate "Women interviewed per day"
 label      variable d             "Reported deaths from SBH"
 label      variable diff          "Missing deaths"
 save     "`pATh'/list_performance.dta", replace
-
+*/
 tempfile   mics
 tempfile   dhs
 tempfile   temp
 tempfile   temp2
 tempfile   temp3
 local      pATh      = "/Users/lshjr3/Documents/SARMAAN"   
-
 
 import     delimited "`pATh'/UN IGME 2024.csv", clear
 keep if    geographicarea  == "Nigeria"
@@ -327,7 +340,7 @@ keep if    HH12          == 1 /*consented interviews*/
 generate   UR             = HH6
 generate   State          = HH7
 generate   Region         = 0
-replace    Region         = 1     if HH7   == 17 | HH7   == 18 | HH7   == 19 | HH7   == 20 | HH7   == 21 | HH7   == 33 | HH7   == 36 
+replace    Region         = 1     if HH7   == 17 | HH7   == 18 | HH7   == 19 | HH7   == 20 | HH7   == 21 | HH7   == 33 | HH7   == 36
 generate   Roofing        = 0     if HC5   != .
 recode     Roofing     (0 = 1)    if HC5   == 31 | HC5   == 33 | HC5   == 34 | HC5   == 35 | HC5   == 36
 generate   Electricity    = 0
@@ -430,7 +443,7 @@ sort       cluster caseid k
 save      `mics', replace
 sort       cluster caseid k
 export     delimited using "`pATh'/MICSnigeria.csv", replace
-*/
+
 
 local      sEL            = "caseid v001 v002 v003 v005 v006 v007 v016 v009 v010 v012 v023 v024 v025 v169a vcal_1 v008 v018"
 use       `sEL' using "`pATh'/NGIR7BFL.DTA", clear
