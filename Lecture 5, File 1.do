@@ -59,34 +59,35 @@ foreach co of local country {                                                /*C
 		sort       b3 b17
 		if b17[1] == . {
 			/*The exact date is only avaliable for the most recent surveys. If not reported, a random day of the month is assumed. Identifies the limits of this random date.*/
-			generate   B_min          = min(mdy(b3 - floor((b3 - 1)/12)*12,1,floor((b3 - 1)/12) + 1900),interview)   if b3    != . /*The first day of the reported month is the lower limit.*/
-			generate   B_max          = min(mdy(b3 + 1 - floor(b3/12)*12,1,floor(b3/12) + 1900),interview)           if b3    != . /*The first day of the following month is the upper limit.*/
+			generate   B_min          = mdy(b3 - floor((b3 - 1)/12)*12,1,floor((b3 - 1)/12) + 1900)          if b3    != .            /*The first day of the reported month is the lower limit.*/
+			generate   B_max          = mdy(b3 + 1 - floor(b3/12)*12,1,floor(b3/12) + 1900)                  if b3    != .            /*The first day of the following month is the upper limit.*/
 			}
 		else {
-			generate   B_min          = min(mdy(b3 - floor((b3 - 1)/12)*12,b17,floor((b3 - 1)/12) + 1900),interview) if b3    != . /*Calculates the date of birth.*/
-			replace    b17            = b17 - 1                                                                      if B_min == . & b17 != ./*Dates on the 31th of months with actually 30.*/
-			replace    B_min          = min(mdy(b3 - floor((b3 - 1)/12)*12,b17,floor((b3 - 1)/12) + 1900),interview) if B_min == . & b3  != ./*Calculates again, if incorrect date.*/ 
-			generate   B_max          = B_min                                /*Because exact dates are available.*/
+			generate   B_min          = mdy(b3 - floor((b3 - 1)/12)*12,b17,floor((b3 - 1)/12) + 1900)        if b3    != .            /*Calculates the date of birth.*/
+			replace    B_min          = mdy(b3 + 1 - floor((b3 - 1)/12)*12,1,floor((b3 - 1)/12) + 1900) - 1  if B_min == . & b3  != . /*Calculates again, if incorrect day of the month.*/ 
+			generate   B_max          = B_min                                                                                         /*Because exact dates are available.*/
 			}
-		
+		replace    B_max          = max(min(B_max,interview),B_min)	                         if B_min != .                            /*Adjusts B_max postdating the day of interview.*/
+	
 		format     %tdDD/NN/CCYY interview B_* DOB		                     /*Gives date format to the date variables.*/
 		rename     b4 sex                                                    /*Identifies the sex and age of the child.*/
 		rename     v012 age
 		generate   W              = v005/1000000                             /*Identifies the sampling weights, rounded and *10^6. Useful when decimals are not available, not the case.*/
 		
 		/*Ages at death (in days) - Birth Histories*/
-		generate   D_min          = b6 - 100                                        if b6    != .   & b6 <= 200 /*The report is in days within the first month of life.*/
-		generate   D_max          = D_min + 1                                       if b6    != .   & b6 <= 200 /*Assumes a plausible maximum of one additional day.*/
-		replace    D_min          = 0                                               if b6    == 198 | b6 == 199 /*If days were reported but a number was not provided (rare).*/ 
-		replace    D_max          = 365.25/12                                       if b6    == 198 | b6 == 199 /*Max and min bound the first month of life.*/	
-		replace    D_min          = (b6 - 200)*365.25/12                            if b6    != .   & b6 >= 200 & b6  < 300 /*The report is 2-24 months.*/
-		replace    D_max          = (b6 - 200 + 1)*365.25/12                        if b6    != .   & b6 >= 200 & b6  < 300 /*Assumes a maximum of one additional month.*/
-		replace    D_min          = 0                                               if b6    == 298 | b6 == 299 /*If months were reported but a number was not provided (rare).*/ 
-		replace    D_max          = 24*365.25/12                                    if b6    == 298 | b6 == 299 /*Max and min bound the first 2 years of life.*/
-		replace    D_min          = (b6 - 300)*365.25                               if b6    != .   & b6 >= 300 /*The report is in years after the second birthday.*/
-		replace    D_max          = (b6 - 300 + 1)*365.25                           if b6    != .   & b6 >= 300 /*Assumes a plausible maximum of one additional year.*/
-		replace    D_min          = 0                                               if b6    == 398 | b6 == 399 /*If years were reported but a number was not provided (rare).*/ 
-		replace    D_max          = max(year(interview) - year(B_min),0)*365.25     if b6    == 398 | b6 == 399 /*Age at death could be from 0 to the age at interview.*/
+		generate   D_min          = b6 - 100                                                 if b6    != .   & b6 <= 200 /*The report is in days within the first month of life.*/
+		generate   D_max          = D_min + 1                                                if b6    != .   & b6 <= 200 /*Assumes a plausible maximum of one additional day.*/
+		replace    D_min          = 0                                                        if b6    == 198 | b6 == 199 /*If days were reported but a number was not provided (rare).*/ 
+		replace    D_max          = 365.25/12                                                if b6    == 198 | b6 == 199 /*Max and min bound the first month of life.*/	
+		replace    D_min          = (b6 - 200)*365.25/12                                     if b6    != .   & b6 >= 200 & b6  < 300 /*The report is 2-24 months.*/
+		replace    D_max          = (b6 - 200 + 1)*365.25/12                                 if b6    != .   & b6 >= 200 & b6  < 300 /*Assumes a maximum of one additional month.*/
+		replace    D_min          = 0                                                        if b6    == 298 | b6 == 299 /*If months were reported but a number was not provided (rare).*/ 
+		replace    D_max          = 24*365.25/12                                             if b6    == 298 | b6 == 299 /*Max and min bound the first 2 years of life.*/
+		replace    D_min          = (b6 - 300)*365.25                                        if b6    != .   & b6 >= 300 /*The report is in years after the second birthday.*/
+		replace    D_max          = (b6 - 300 + 1)*365.25                                    if b6    != .   & b6 >= 300 /*Assumes a plausible maximum of one additional year.*/
+		replace    D_min          = 0                                                        if b6    == 398 | b6 == 399 /*If years were reported but a number was not provided (rare).*/ 
+		replace    D_max          = max(year(interview) - year(B_min),0)*365.25              if b6    == 398 | b6 == 399 /*Age at death could be from 0 to the age at interview.*/
+		replace    D_max          = max(max(min(B_max + D_max,interview) - B_max,0),D_min)   if D_min != .               /*Adjusts max ages at death postdating the day of interview.*/
 		
 		sort       caseid bidx                                                                                  /*Assumes a natural sort.*/
 		generate   temp           = 1                                               if B_min != .               /*Creates a temp variable to indicate a child is born.*/
