@@ -19,245 +19,41 @@ for i = 1:numel(lISt)
 end
 
 clear lISt i
-bASe.interview        = datetime(year(bASe.sUBmiSSion),month(bASe.sUBmiSSion),day(bASe.sUBmiSSion));
-bASe.B_min            = datetime(year(bASe.B),month(bASe.B),1);
-bASe.B_max            = datetime(year(bASe.B),month(bASe.B) + 1,1) - 1;
-bASe.DOB_min          = datetime(year(bASe.DOB),month(bASe.DOB),1);
-bASe.DOB_max          = datetime(year(bASe.DOB),month(bASe.DOB) + 1,1) - 1;
-bASe.age              = max(floor((years(bASe.interview - bASe.DOB_min) + years(bASe.interview - bASe.DOB_max))/2),10);
-bASe.GO               = 1 + min(floor((bASe.age - 10)/5),8);
+bASe.interview                      = datetime(year(bASe.sUBmiSSion),month(bASe.sUBmiSSion),day(bASe.sUBmiSSion));
+bASe.B_min                          = datetime(year(bASe.B),month(bASe.B),1);
+bASe.B_max                          = datetime(year(bASe.B),month(bASe.B) + 1,1) - 1;
+sEL                                 = ~isnat(bASe.B_min);
+bASe.B_max(sEL)                     = max(min(bASe.B_max(sEL),bASe.interview(sEL)),bASe.B_min(sEL));
+bASe.DOB_min                        = datetime(year(bASe.DOB),month(bASe.DOB),1);
+bASe.DOB_max                        = datetime(year(bASe.DOB),month(bASe.DOB) + 1,1) - 1;
+bASe.age                            = max(floor((years(bASe.interview - bASe.DOB_min) + years(bASe.interview - bASe.DOB_max))/2),10);
+bASe.GO                             = 1 + min(floor((bASe.age - 10)/5),8);
+bASe.cluster(bASe.cluster == "C-1") = "Kano";
+bASe.cluster(bASe.cluster == "C-2") = "Kano";
+bASe.cluster(bASe.cluster == "C-3") = "Kaduna";
 save(char(pATh + "Results/bASe.mat"),'bASe','IGMEnigeria','DHSnigeria','MICSnigeria');
 
 
 clear
 pATh                  = "/Users/lshjr3/Documents/SARMAAN/";
-load(char(pATh + "Results/bASe.mat"),'bASe','DHSnigeria','MICSnigeria');
-coloR                 = {[0.05 0.05 0.05],[0.95 0.00 0.95],[0.85 0.35 0.01],[0.00 0.00 0.75],[0.45 0.65 0.20],[0.65 0.10 0.20],[0.00 0.55 0.65]};
-sAMplE                = {'Children','Women'};
-vAR                   = {'year','month of the year','day of the month'};
-sOUrCe                = {'$\textrm{SARMAAN}$','$\textrm{DHS VII}$','$\textrm{MICS 6}$'};
-aLPha                 = [.2 .1 .1];
-
-pix                   = 1/37.7952755906*0.75;
-fi                    = figure('Color',[1 1 1]);
-fi.Theme              = 'light';
-fi.Position           = [0 0 numel(sAMplE) numel(vAR)]*7/pix;
-axes1                 = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
-hold(axes1,'on');
-TL                    = tiledlayout(numel(vAR),numel(sAMplE),'Padding','compact','TileSpacing','compact');
-
-for i = 1:numel(sAMplE)*numel(vAR)
-    nexttile(i)
-    ax{i}                          = gca;
-    ax{i}.FontName                 = 'Times New Roman';
-    ax{i}.FontSize                 = 10;
-    ax{i}.XAxis.TickLabelFormat    = '%.0f';
-    ax{i}.YAxis.TickLabelFormat    = '%.2f';
-    ax{i}.XAxis.MinorTick          = 'off';
-    ax{i}.YAxis.MinorTick          = 'off';
-    ax{i}.LabelFontSizeMultiplier  = 1;
-    
-    if i <= numel(sAMplE)
-        title(char("$\textrm{DOB: " + sAMplE{2 - mod(i,2)} + "}$"),'Interpreter','latex','FontName','Times New Roman','FontSize',11);
-    end
-    xlabel(char("$\textit{" + vAR{ceil(i/2)} + "}$"),'Interpreter','latex','FontName','Times New Roman','FontSize',10);
-    if isequal(mod(i,numel(sAMplE)),1)
-        ylabel('$\textit{probability density function}$','Interpreter','latex','FontName','Times New Roman','FontSize',10);
-    end
-    grid on;
-    box on;
-    hold on;
-    
-    if isequal(mod(i,numel(sAMplE)),1)
-        base = datevec(bASe.B(bASe.birth == 'livebirth'));
-        base = base(:,1:3);
-        DHS  = datevec(DHSnigeria.Birth(~isnat(DHSnigeria.Birth)));
-        DHS  = DHS(:,1:3);
-        MICS = datevec(MICSnigeria.B_min(~isnat(MICSnigeria.B_min)));
-        MICS = MICS(:,1:3);
-    else
-        base = datevec(bASe.DOB(bASe.k == 1));
-        base = base(:,1:3);
-        DHS  = datevec(DHSnigeria.DOB(DHSnigeria.k == 1));
-        DHS  = [DHS(:,1:2) NaN(size(DHS,1),1)];
-        MICS = datevec(MICSnigeria.DOB_min(MICSnigeria.k == 1));
-        MICS = [MICS(:,1:2) NaN(size(MICS,1),1)];
-    end
-    j    = ceil(i/numel(sAMplE));    
-    dATa = {base(:,j),DHS(:,j),MICS(:,j)};
-    
-    if isequal(j,2)
-        xlim([.5 12.5])
-    elseif isequal(j,3)
-        xlim([.5 31.5])
-    end
-    
-    for j = 1:numel(dATa)
-        histogram(dATa{j},'Normalization','pdf','FaceColor',coloR{j},'FaceAlpha',aLPha(j),'EdgeColor',coloR{j},'EdgeAlpha',min(aLPha(j)*1.75,1));
-    end
-    if isequal(i,numel(sAMplE)*numel(vAR) - 1)
-        legend(sOUrCe,'Interpreter','latex','FontName','Times New Roman','FontSize',9,'FontAngle','oblique','Location','southoutside','NumColumns',numel(sOUrCe),'Box','off');
-    end
-end
-saveas(gcf,char(pATh + "Results/Figure 1.png"));
-
-
-clear
-pATh                  = "/Users/lshjr3/Documents/SARMAAN/";
-load(char(pATh + "Results/bASe.mat"),'bASe','DHSnigeria','MICSnigeria');
-
-bASe                  = bASe(bASe.age >= 15 & bASe.age <  50,:);
-bASe.id               = cumsum(bASe.k == 1);
-bASe                  = bASe(bASe.birth == 'livebirth',{'B_min','B_max','DOB_min','DOB_max','id'});
-bASe.t                = zeros(size(bASe,1),1);
-bASe.t(2:end)         = bASe.id(1:end - 1) == bASe.id(2:end) & bASe.B_min(1:end - 1) == bASe.B_min(2:end);
-bASe                  = bASe(~bASe.t,:);
-rng(0);
-p                     = rand(size(bASe,1),1);
-bASe.B                = eXAcTTime(bASe.B_min).*p + eXAcTTime(bASe.B_max).*(1 - p);
-bASe                  = sortrows(bASe,{'id','B'});
-for i = 1:bASe.id(end)
-    sEL                = find(bASe.id == i);
-    K                  = numel(sEL);
-    bASe.k(sEL)        = (1:K)';
-    bASe.K(sEL)        = K;
-end
-
-sEL                   = (bASe.k == 1);
-p                     = rand(sum(sEL),1);
-bASe.DOB              = repelem(eXAcTTime(bASe.DOB_min(sEL)).*p + eXAcTTime(bASe.DOB_max(sEL)).*(1 - p),bASe.K(sEL));
-bASe.id               = cumsum(sEL);
-dATa{1}               = bASe(:,{'B','DOB','k','K','id'});
-clear p ID bASe sEL K i
-
-DHSnigeria            = DHSnigeria(~isnat(DHSnigeria.Birth),:);
-sEL                   = (DHSnigeria.k == 1);
-DHSnigeria.id         = cumsum(sEL);
-p                     = rand(sum(sEL),1);
-DHSnigeria.DOB        = repelem(eXAcTTime(DHSnigeria.DOB(sEL)).*p + eXAcTTime(datetime(year(DHSnigeria.DOB(sEL)),month(DHSnigeria.DOB(sEL)) + 1,1) - 1).*(1 - p),DHSnigeria.K(sEL));
-DHSnigeria.t          = zeros(size(DHSnigeria,1),1);
-DHSnigeria.t(2:end)   = DHSnigeria.id(1:end - 1) == DHSnigeria.id(2:end) & DHSnigeria.Birth(1:end - 1) == DHSnigeria.Birth(2:end);
-DHSnigeria            = DHSnigeria(~DHSnigeria.t,:);
-DHSnigeria.B          = eXAcTTime(DHSnigeria.Birth);
-DHSnigeria            = sortrows(DHSnigeria(:,{'B','DOB','id'}),{'id','B'});
-for i = 1:DHSnigeria.id(end)
-    sEL                = find(DHSnigeria.id == i);
-    K                  = numel(sEL);
-    DHSnigeria.k(sEL)  = (1:K)';
-    DHSnigeria.K(sEL)  = K;
-end
-dATa{2}               = DHSnigeria(:,{'B','DOB','k','K','id'});
-clear p DHSnigeria sEL
-
-MICSnigeria           = MICSnigeria(~isnat(MICSnigeria.B_min),:);
-sEL                   = (MICSnigeria.k == 1);
-MICSnigeria.id        = cumsum(sEL);
-p                     = rand(sum(sEL),1);
-MICSnigeria.DOB       = repelem(eXAcTTime(MICSnigeria.DOB_min(sEL)).*p + eXAcTTime(MICSnigeria.DOB_max(sEL)).*(1 - p),MICSnigeria.K(sEL));
-MICSnigeria.t         = zeros(size(MICSnigeria,1),1);
-MICSnigeria.t(2:end)  = MICSnigeria.id(1:end - 1) == MICSnigeria.id(2:end) & MICSnigeria.B_min(1:end - 1) == MICSnigeria.B_min(2:end);
-MICSnigeria           = MICSnigeria(~MICSnigeria.t,:);
-p                     = rand(size(MICSnigeria,1),1);
-MICSnigeria.B         = eXAcTTime(MICSnigeria.B_min).*p + eXAcTTime(MICSnigeria.B_max).*(1 - p);
-MICSnigeria           = sortrows(MICSnigeria(:,{'B','DOB','id'}),{'id','B'});
-for i = 1:MICSnigeria.id(end)
-    sEL                = find(MICSnigeria.id == i);
-    K                  = numel(sEL);
-    MICSnigeria.k(sEL) = (1:K)';
-    MICSnigeria.K(sEL) = K;
-end
-dATa{3}               = MICSnigeria(:,{'B','DOB','k','K','id'});
-clear p MICSnigeria sEL
-
-for i = 1:numel(dATa)
-    mATrIx      = NaN(dATa{i}.id(end),max(dATa{i}.K) + 2);
-    mATrIx(:,1) = dATa{i}.DOB(dATa{i}.k == 1);
-    for j = 1:max(dATa{i}.K)
-        sEL               = dATa{i}.id(dATa{i}.k == j);
-        mATrIx(sEL,1 + j) = dATa{i}.B(dATa{i}.k == j);
-    end
-    mATrIx      = mATrIx(:,2:end) - mATrIx(:,1:end - 1);
-    dATa{i}     = mATrIx;
-end
-
-coloR                 = {[0.05 0.05 0.05],[0.95 0.00 0.95],[0.85 0.35 0.01],[0.00 0.00 0.75],[0.45 0.65 0.20],[0.65 0.10 0.20],[0.00 0.55 0.65]};
-sOUrCe                = {'$\textrm{SARMAAN}$','$\textrm{DHS VII}$','$\textrm{MICS 6}$','$\textit{unlikely}$'};
-aLPha                 = [.2 .1 .1];
-pix                   = 1/37.79527559068*0.75;
-fi                    = figure('Color',[1 1 1]);
-fi.Position           = [0 0 3 2]*7/pix;
-fi.Theme              = 'light';
-axes1                 = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
-hold(axes1,'on');
-TL                    = tiledlayout(2,3,'Padding','compact','TileSpacing','compact');
-
-for i = 1:6
-    nexttile(i)
-    ax{i}                          = gca;
-    ax{i}.FontName                 = 'Times New Roman';
-    ax{i}.FontSize                 = 10;
-    ax{i}.XAxis.TickLabelFormat    = '%.0f';
-    ax{i}.YAxis.TickLabelFormat    = '%.2f';
-    ax{i}.XTickLabelRotation       = 0;
-    ax{i}.YTickLabelRotation       = 0;
-    ax{i}.LabelFontSizeMultiplier  = 1;
-
-    if isequal(i,1)
-        f                              = 10;
-        title('$\textrm{Maternal debut}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        xlabel('$\textit{age}$','Interpreter','latex','FontName','Times New Roman','FontSize',10);
-        ax{i}.XAxis.TickValues         = 5:5:50;
-        xlim([5 35]);
-    else
-        f                              = 26*7/365.25;
-        title(char("$\textrm{Birth interval " + (i - 1) + "}$"),'Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        xlabel('$\textit{years}$','Interpreter','latex','FontName','Times New Roman','FontSize',10);
-        ax{i}.XAxis.TickValues         = 0:1:10;
-        xlim([0 7]);
-    end
-
-    if isequal(mod(i,3),1)
-        ylabel('$\textit{probability density function}$','Interpreter','latex','FontName','Times New Roman','FontSize',9);
-    end
-    grid on;
-    box on;
-    hold on;
-        
-    for j = 1:numel(dATa)
-        histogram(dATa{j}(:,i),'Normalization','pdf','FaceColor',coloR{j},'FaceAlpha',aLPha(j),'EdgeColor',coloR{j},'EdgeAlpha',min(aLPha(j)*1.75,1));
-    end
-
-    F                              = ax{i}.YLim;
-    fill([0 f f 0],kron(F,ones(1,2)),coloR{7},'FaceAlpha',.10,'EdgeAlpha',0.25,'LineWidth',0.25,'LineStyle','-','EdgeColor',coloR{7});
-    ylim(F);
-    if isequal(i,5)
-        legend(sOUrCe,'Interpreter','latex','FontName','Times New Roman','FontSize',9,'Location','southoutside','NumColumns',numel(sOUrCe),'Box','off');
-    end
-end
-saveas(gcf,char(pATh + "Results/Figure 2.png"));
-
-
-
-
-
-clear
-pATh                  = "/Users/lshjr3/Documents/SARMAAN/";
+RESolUTioN            = 300;
 load(char(pATh + "Results/bASe.mat"),'bASe');
 date                  = max(bASe.interview);
-Ts                    = {datetime([year(date) - 5 year(date)]',month(date),day(date)),datetime([year(date) - 1 year(date)]' - 4,month(date),day(date)),datetime([year(date) - 1 year(date)]' - 3,month(date),day(date)),datetime([year(date) - 1 year(date)]' - 2,month(date),day(date)),datetime([year(date) - 1 year(date)]' - 1,month(date),day(date)),datetime([year(date) - 1 year(date)]',month(date),day(date))};
+Ts                    = {datetime([year(date) - 5 year(date)]',month(date),day(date)),datetime([year(date) - 4 year(date)]' - 6,month(date),day(date)),datetime([year(date) - 2 year(date)]' - 4,month(date),day(date)),datetime([year(date) - 2 year(date)]' - 2,month(date),day(date)),datetime([year(date) - 1 year(date)]' - 1,month(date),day(date)),datetime([year(date) - 1 year(date)]',month(date),day(date))};
 x{1}                  = [(0:7:28)/365.25,[(2:1:12),(15:3:24),(36:12:60)]/12]';
 x{2}                  = [string(0);string([(7:7:28)';(2:1:11)';(12:3:24)';(36:12:60)']) + char([kron('d',ones(4,1));kron('m',ones(18,1))])];
 n                     = x{1}(2:end) - x{1}(1:end - 1);
 models                = {'$\textit{15-49}$','$\textit{10-55}$'};
+cLUsTEr               = {'Kano','Kaduna'};
 MO                    = {bASe.age >= 15 & bASe.age < 50,bASe.age >= 0};
-R                     = 10;
+R                     = 250;
 aGEs                  = [5 16 23];
 
 data                  = bASe(bASe.k == 1,{'cluster','moTHer','K'});
 W                     = NaN(size(data,1),R + 1);
 rng(0);    
-for j = 1:max(bASe.cluster)
-    sEL             = (data.cluster == j);
+for j = 1:numel(cLUsTEr)
+    sEL             = (data.cluster == cLUsTEr{j});
     S               = [(1:sum(sEL))',unidrnd(sum(sEL),sum(sEL),R)];
     for r = 1:R + 1
         temp     = tabulate([S(:,1);S(:,r)]);
@@ -266,31 +62,33 @@ for j = 1:max(bASe.cluster)
         clc;
         r/(R + 1)
     end
-clear sEL S r  
+    clear sEL S r  
 end
 W                     = W(repelem((1:size(data,1))',data.K),:);
 clear data j
-for j = 1:max(bASe.cluster)
-    sEL             = (bASe.survival == 'dead' | bASe.survival == 'alive') & bASe.cluster == j;
-    pOP{j}          = char("$\textrm{Cluster " + j + ", B = " + sum(sEL) + "}$");
-    sEL             = bASe.k == 1 & bASe.cluster == j;
-    pOPw{j}         = char("$\textrm{Cluster " + j + ", W = " + sum(sEL) + "}$");
-    sEL             = bASe.survival == 'dead' & bASe.cluster == j;
-    pOPd{j}         = char("$\textrm{Cluster " + j + ", D = " + sum(sEL) + "}$");
+for j = 1:numel(cLUsTEr)
+    sEL             = (bASe.survival == 'dead' | bASe.survival == 'alive') & bASe.cluster == cLUsTEr{j};
+    pOP{j}          = char("$\textrm{" + cLUsTEr{j} + ", B = " + sum(sEL) + "}$");
+    sEL             = bASe.k == 1 & bASe.cluster == cLUsTEr{j};
+    pOPw{j}         = char("$\textrm{" + cLUsTEr{j} + ", W = " + sum(sEL) + "}$");
+    sEL             = bASe.survival == 'dead' & bASe.cluster == cLUsTEr{j};
+    pOPd{j}         = char("$\textrm{" + cLUsTEr{j} + ", D = " + sum(sEL) + "}$");
 end
 
 for i = 1:2
     for j = 1:numel(models)
         h          = j + (i - 1)*numel(models);
-        dATa{h}    = {bASe.cluster == i & MO{j},W};
+        dATa{h}    = {bASe.cluster == cLUsTEr{i} & MO{j},W};
         for k = 1:numel(Ts)
             date      = eXAcTTime(Ts{k});
-            date      = char("$\textrm{Cluster " + i + ", " + string(sprintf('%0.1f',date(1))) + "-" + string(sprintf('%0.1f',date(2))) + "}$");
+            date      = char("$\textrm{" + cLUsTEr{i} + ", " + string(sprintf('%0.1f',date(1))) + "-" + string(sprintf('%0.1f',date(2))) + "}$");
             pOPs{k,h} = {date;''};
             clear date
         end
     end
 end
+save(char(pATh + "Results/ReSAmPLiNG.mat"),'dATa','Ts','-v7.3','-nocompression');
+
 
 sex              = [2 1];
 for i = 1:numel(dATa)
@@ -351,6 +149,7 @@ for i = 1:numel(dATa)
         m               = events./exposure;
         q               = 1 - [ones(1,R + 1);exp(-cumsum(m.*n))];
         
+        TaBle.m{h,i}    = m;
         TaBle.q{h,i}    = q;
         TaBle.s{h,i}    = 1 - (1 - q([1 2 5],:)).*(1 - stillbirths);
         TaBle.SNR{h,i}  = [TaBle.s{h,i}(1,:);TaBle.q{h,i}(2,:);TaBle.q{h,i}(5,:);TaBle.s{h,i}(1,:)./TaBle.q{h,i}(5,:)/1000;TaBle.q{h,i}(2,:)./TaBle.q{h,i}(5,:)/1000];
@@ -362,6 +161,7 @@ for i = 1:numel(dATa)
     
     A                    = [max(min(bASe.age(dATa{i}{1})),15),min(max(bASe.age(dATa{i}{1})),49) + 1];
     Ax                   = (min(bASe.age(dATa{i}{1})):max(bASe.age(dATa{i}{1})))';
+    Ax                   = 10:55;
     for j = 1:numel(Ax)
         a               = max(min(ageS(s,:) - 3,Ax(j) + 1),Ax(j));
         o               = max(min(ageS(s,:),Ax(j) + 1),Ax(j));
@@ -440,6 +240,7 @@ for i = 1:numel(dATa)
         m               = events./exposure;
         q               = 1 - [ones(1,R + 1);exp(-cumsum(m.*n))];
         
+        TaBle.m{h,i}    = m;
         TaBlE.q{h,i}    = q;
         TaBlE.s{h,i}    = 1 - (1 - q([1 2 5],:)).*(1 - stillbirths);
         TaBlE.tAU{h,i}  = T;
@@ -459,13 +260,13 @@ family                = 1;
 
 for i = 1:2
     H             = i + numel(dATa);
-    dATaB{i}      = {bASe.cluster == i & bASe.k == 1 & MO{1},W};
+    dATaB{i}      = {bASe.cluster == cLUsTEr{i} & bASe.k == 1 & MO{1},W};
     for k = 1:size(BrassP,2)
         date       = string(sprintf('%0.1f',BrassP(:,k)'*BrassTime - 2.5)) + "-" + string(sprintf('%0.1f',BrassP(:,k)'*BrassTime + 2.5));
-        pOPs{k,H}  = {char("$\textrm{Cluster " + i + " SBH (Brass: " + string(CD{family}) + "), " + date + "}$");''};
+        pOPs{k,H}  = {char("$\textrm{" + cLUsTEr{i} + " SBH (Brass: " + string(CD{family}) + "), " + date + "}$");''};
         clear date
     end
-    pOPs{k + 1,H} = {char("$\textrm{Cluster " + i + " SBH (Brass: " + string(CD{family}) + ")}$");''};
+    pOPs{k + 1,H} = {char("$\textrm{" + cLUsTEr{i} + " SBH (Brass: " + string(CD{family}) + ")}$");''};
     clear h H
 end
 
@@ -523,10 +324,12 @@ mIn                   = datetime([year(mAx) - 5,month(mAx),day(mAx)],'Format','d
 dATe{1}               = [mIn mAx];
 dATe{2}               = eXAcTTime(dATe{1});
 Tdhs                  = dATe{2};
-models                = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$'};
+models                = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$','$\textit{Kaduna}$','$\textit{Sokoto}$'};
 dATaDHS{1}            = {DHSnigeria.age >= 0,DHSnigeria.W};
 dATaDHS{2}            = {DHSnigeria.Region == 3,DHSnigeria.W};
 dATaDHS{3}            = {DHSnigeria.State == 31 | DHSnigeria.State == 32,DHSnigeria.W};
+dATaDHS{4}            = {DHSnigeria.State == 29 | DHSnigeria.State == 30,DHSnigeria.W};
+dATaDHS{5}            = {DHSnigeria.State == 37 | DHSnigeria.State == 38,DHSnigeria.W};
 
 for i = 1:numel(dATaDHS)
     data      = "$\textrm{DHS VII, " + string(sprintf('%0.1f',dATe{2}(1))) + "-" + string(sprintf('%0.1f',dATe{2}(2))) + "}$";
@@ -548,15 +351,7 @@ for r = 1:R + 1
     clc;
     r/(R + 1)
 end
-clear r s S w
-
-for i = 1:numel(dATaDHS)
-    dATaDHS{i}{2} = Wdhs.*dATaDHS{i}{2};
-end
-clear Wdhs
-save(char(pATh + "Results/ReSAmPLiNG.mat"),'dATa','dATaDHS','Ts','-v7.3','-nocompression');
-
-DHSnigeria.date        = eXAcTTime(DHSnigeria.interview);
+clear r s S wDHS;
 DHSnigeria.births      = zeros(size(DHSnigeria,1),1);  
 DHSnigeria.stillbirths = zeros(size(DHSnigeria.births,1),1);
 sET                    = find(~isnan(DHSnigeria.row));
@@ -585,14 +380,22 @@ for j = 1:numel(sET)
         clear sT sB
     end
     clear cal
-    clc;
     j/numel(sET)
 end
 
+
+for i = 1:numel(dATaDHS)
+    dATaDHS{i}{2} = Wdhs.*dATaDHS{i}{2};
+end
+clear Wdhs
+save(char(pATh + "Results/ReSAmPLiNG.mat"),'dATa','dATaDHS','Ts','-v7.3','-nocompression');
+
+
 p                     = rand(size(DHSnigeria,1),R + 1);
-d                     = (p.*DHSnigeria.D_min + (1 - p).*(DHSnigeria.D_max - eps))/365.25;
-B                     = eXAcTTime(DHSnigeria.Birth);
-B                     = B*ones(1,R + 1);
+d                     = (p.*DHSnigeria.D_min + (1 - p).*DHSnigeria.D_max)/365.25;
+p                     = rand(size(DHSnigeria,1),R + 1);
+B                     = datetime(datenum(DHSnigeria.B_min) + datenum(DHSnigeria.B_max - DHSnigeria.B_min).*p,'ConvertFrom','datenum');
+B                     = eXAcTTime(B);
 D                     = B + d;
 O                     = min(D,Tdhs(2));
 
@@ -630,6 +433,7 @@ for i = 1:numel(dATaDHS)
         m                    = events./exposure;
         q                    = 1 - [ones(1,R + 1);exp(-cumsum(m.*n))];
 
+        TaBle.m{k,h}         = m;
         TaBle.q{k,h}         = q;    
         TaBle.s{k,h}         = 1 - (1 - q([1 2 5],:)).*(1 - stillbirths);
         TaBle.SNR{k,h}       = [TaBle.s{k,h}(1,:);TaBle.q{k,h}(2,:);TaBle.q{k,h}(5,:);TaBle.s{k,h}(1,:)./TaBle.q{k,h}(5,:)/1000;TaBle.q{k,h}(2,:)./TaBle.q{k,h}(5,:)/1000];
@@ -639,18 +443,21 @@ for i = 1:numel(dATaDHS)
     end
     
     A                    = [max(min(DHSnigeria.age(dATaDHS{i}{1})),15),min(max(DHSnigeria.age(dATaDHS{i}{1})),49)];
-    TFR                  = 0;
-    for j = A(1):A(2)
-        a        = max(min(ageS(s,:) - 3,j + 1),j);
-        o        = max(min(ageS(s,:),j + 1),j);
-        exposure = sum((DHSnigeria.k(s) == 1).*(o - a).*w(s,:));
-        events   = sum((dATe{2}(2) - B(s,:) <= 3 & dATe{2}(2) - B(s,:) > 0).*(ageB(s,:) >= j & ageB(s,:) < j + 1).*w(s,:));
-        TFR      = TFR + events./exposure;
+    Ax                   = (min(DHSnigeria.age(dATaDHS{i}{1})):max(DHSnigeria.age(dATaDHS{i}{1})))';
+    Ax                   = 10:55;
+    for j = 1:numel(Ax)
+        a               = max(min(ageS(s,:) - 3,Ax(j) + 1),Ax(j));
+        o               = max(min(ageS(s,:),Ax(j) + 1),Ax(j));
+        exposure        = sum((DHSnigeria.k(s) == 1).*(o - a).*w(s,:));
+        events          = sum((dATe{2}(2) - B(s,:) <= 3 & dATe{2}(2) - B(s,:) > 0).*(ageB(s,:) >= Ax(j) & ageB(s,:) < Ax(j) + 1).*w(s,:));
+        TFR(j,:)        = events./max(exposure,eps);
+        clear events exposure a o
         clc;
-        (j - A(1) + 1)/(A(2) - A(1) + 1)
+        j/numel(Ax)
     end
-    
-    TaBle.TFR{1,h}       = TFR;
+
+    TaBle.F{1,h}         = TFR;
+    TaBle.TFR{1,h}       = sum(TFR(Ax >= A(1) & Ax < A(2),:),1);
     TaBle.sRB{1,h}       = sum((DHSnigeria.sex(s) == 1).*w(s,:))./sum((DHSnigeria.sex(s) == 2).*w(s,:));
     TaBle.parity{1,h}    = sum(~isnan(DHSnigeria.bidx(s)).*w(s,:))./sum((DHSnigeria.k(s) == 1).*w(s,:));
     TaBle.childless{1,h} = sum((DHSnigeria.mother(s) ~= 1 & DHSnigeria.k(s) == 1).*w(s,:))./sum((DHSnigeria.k(s) == 1).*w(s,:))*100;
@@ -694,6 +501,7 @@ for i = 1:numel(dATaDHS)
         m               = events./exposure;
         q               = 1 - [ones(1,R + 1);exp(-cumsum(m.*n))];
         
+        TaBle.m{h,k}    = m;
         TaBlE.q{h,k}    = q;
         TaBlE.s{h,k}    = 1 - (1 - q([1 2 5],:)).*(1 - stillbirths);
         TaBlE.tAU{h,k}  = Tdhs;
@@ -713,10 +521,12 @@ mIn                   = datetime([year(mAx) - 5,month(mAx),day(mAx)],'Format','d
 dATe{1}               = [mIn mAx];
 dATe{2}               = eXAcTTime(dATe{1});
 Tmics                 = dATe{2};
-models                = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$'};
+models                = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$','$\textit{Kaduna}$','$\textit{Sokoto}$'};
 dATaMICS{1}           = {MICSnigeria.age >= 0,MICSnigeria.W};
 dATaMICS{2}           = {MICSnigeria.Region == 1,MICSnigeria.W};
 dATaMICS{3}           = {MICSnigeria.State == 19,MICSnigeria.W};
+dATaMICS{4}           = {MICSnigeria.State == 18,MICSnigeria.W};
+dATaMICS{5}           = {MICSnigeria.State == 33,MICSnigeria.W};
 
 for i = 1:numel(dATaMICS)
     data      = "$\textrm{MICS 6, " + string(sprintf('%0.1f',dATe{2}(1))) + "-" + string(sprintf('%0.1f',dATe{2}(2))) + "}$";
@@ -749,7 +559,7 @@ save(char(pATh + "Results/ReSAmPLiNG.mat"),'dATa','dATaDHS','dATaMICS','Ts','-v7
 
 
 p                     = rand(size(MICSnigeria,1),R + 1);
-d                     = (p.*MICSnigeria.D_min + (1 - p).*(MICSnigeria.D_max - eps))/365.25;
+d                     = (p.*MICSnigeria.D_min + (1 - p).*MICSnigeria.D_max)/365.25;
 p                     = rand(size(MICSnigeria,1),R + 1);
 B                     = datetime(datenum(MICSnigeria.B_min) + datenum(MICSnigeria.B_max - MICSnigeria.B_min).*p,'ConvertFrom','datenum');
 B                     = eXAcTTime(B);
@@ -787,6 +597,7 @@ for i = 1:numel(dATaMICS)
         m                    = events./exposure;
         q                    = 1 - [ones(1,R + 1);exp(-cumsum(m.*n))];
 
+        TaBle.m{k,h}         = m;
         TaBle.q{k,h}         = q;    
         TaBle.SRB{k,h}       = SRB;
         TaBle.tAU{k,h}       = dATe{1}';
@@ -794,18 +605,21 @@ for i = 1:numel(dATaMICS)
     end
     
     A                    = [max(min(MICSnigeria.age(dATaMICS{i}{1})),15),min(max(MICSnigeria.age(dATaMICS{i}{1})),49)];
-    TFR                  = 0;
-    for j = A(1):A(2)
-        a        = max(min(ageS(s,:) - 3,j + 1),j);
-        o        = max(min(ageS(s,:),j + 1),j);
-        exposure = sum((MICSnigeria.k(s) == 1).*(o - a).*w(s,:));
-        events   = sum((dATe{2}(2) - B(s,:) <= 3 & dATe{2}(2) - B(s,:) > 0).*(ageB(s,:) >= j & ageB(s,:) < j + 1).*w(s,:));
-        TFR      = TFR + events./exposure;
+    Ax                   = (min(MICSnigeria.age(dATaMICS{i}{1})):max(MICSnigeria.age(dATaMICS{i}{1})))';
+    Ax                   = 10:55;
+    for j = 1:numel(Ax)
+        a               = max(min(ageS(s,:) - 3,Ax(j) + 1),Ax(j));
+        o               = max(min(ageS(s,:),Ax(j) + 1),Ax(j));
+        exposure        = sum((MICSnigeria.k(s) == 1).*(o - a).*w(s,:));
+        events          = sum((dATe{2}(2) - B(s,:) <= 3 & dATe{2}(2) - B(s,:) > 0).*(ageB(s,:) >= Ax(j) & ageB(s,:) < Ax(j) + 1).*w(s,:));
+        TFR(j,:)        = events./max(exposure,eps);
+        clear events exposure a o
         clc;
-        (j - A(1) + 1)/(A(2) - A(1) + 1)
+        j/numel(Ax)
     end
     
-    TaBle.TFR{1,h}       = TFR;
+    TaBle.F{1,h}         = TFR;
+    TaBle.TFR{1,h}       = sum(TFR(Ax >= A(1) & Ax < A(2),:),1);
     TaBle.sRB{1,h}       = sum((MICSnigeria.sex(s) == 1).*w(s,:))./sum((MICSnigeria.sex(s) == 2).*w(s,:));
     TaBle.parity{1,h}    = sum(~isnan(MICSnigeria.bidx(s)).*w(s,:))./sum((MICSnigeria.k(s) == 1).*w(s,:));
     TaBle.childless{1,h} = sum((MICSnigeria.mother(s) ~= 1 & MICSnigeria.k(s) == 1).*w(s,:))./sum((MICSnigeria.k(s) == 1).*w(s,:))*100;
@@ -846,6 +660,7 @@ for i = 1:numel(dATaMICS)
         m               = events./exposure;
         q               = 1 - [ones(1,R + 1);exp(-cumsum(m.*n))];
         
+        TaBle.m{h,k}    = m;
         TaBlE.q{h,k}    = q;
         TaBlE.tAU{h,k}  = Tmics;
         clear events exposure q m births stillbirths SRB s wH
@@ -906,7 +721,7 @@ TaBle.tAU{i + 1,h} = datetime(IGME{1} - .5,7,1);
 
 mAX                = 2;
 tHtiles            = [50 2.5 97.5];
-selection          = {[1 1 2],[1 3 2],[1 5 1],[1 6 1],[1 7 1],[1 8 1],[1 9 1],[1 10 1],[1 11 1],[1 12 1]};
+selection          = {[1 1 2],[1 3 2],[1 5 1],[1 6 1],[1 7 1],[1 8 1],[1 9 1],[1 10 1],[1 12 1],[1 13 1],[1 14 1],[1 15 1]};
 lISt               = {TaBle.childless,TaBle.parity,TaBle.TFR,TaBle.sRB};
 for i = 1:numel(selection)
     temp       = pOPs{selection{i}(1),selection{i}(2)};
@@ -942,12 +757,12 @@ models       = {'$\textit{15-49}$','$\textit{10-55}$'};
 vARs         = {models models models models};
 foRMaT       = {'%0.2f','%0.2f','%0.2f'};
 nOTe         = {'$\textrm{Sample}$','$\textit{Bootstrapping}$ $\mathrm{p50}$/$\mathit{[p2.5,p97.5]}$'};
-lABs         = {{1} {2} {3} {4} {5 6 7} {8 9 10}};
+lABs         = {{1} {2} {3} {4} {5 6 7 8} {9 10 11 12}};
 tABleBAyEs(sEt,vARs,foRMaT,lABs,nOTe,label,cell2mat(table),0.120,0.060,[]);
-saveas(gcf,char(pATh + "Results/Table 1a.png"));
+exportgraphics(gcf,char(pATh + "Results/Table_1.png"),'Resolution',RESolUTioN);
 clear table label temp
 
-selection  = {[2 1 2],[3 1 2],[4 1 2],[5 1 2],[6 1 2],[2 3 2],[3 3 2],[4 3 2],[5 3 2],[6 3 2],[1 13 1],[2 13 1],[3 13 1],[4 13 1]};
+selection  = {[2 1 2],[3 1 2],[4 1 2],[5 1 2],[6 1 2],[2 3 2],[3 3 2],[4 3 2],[5 3 2],[6 3 2],[1 17 1],[2 17 1],[3 17 1],[4 17 1]};
 mAX        = 2;
 for i = 1:numel(selection)
     label{i,1} = pOPs{selection{i}(1),selection{i}(2)};
@@ -973,10 +788,10 @@ sEt          = {'NMR - $\mathit{q}\mathrm{(28}\mathit{d}\mathrm{)}$','IMR - $\ma
 vARs         = {models models models};
 lABs         = {{1 2 3 4 5} {6 7 8 9 10} {11 12 13 14}};
 tABleBAyEs(sEt,vARs,foRMaT,lABs,nOTe,label,cell2mat(table),0.140,0.060,[]);
-saveas(gcf,char(pATh + "Results/Table 2.png"));
+exportgraphics(gcf,char(pATh + "Results/Table_2.png"),'Resolution',RESolUTioN);
 clear table label temp
 
-selection  = {[1 1 2],[1 3 2],[1 5 1],[2 5 1],[1 6 1],[2 6 1],[1 7 1],[1 8 1],[1 9 1],[1 10 1],[1 11 1],[1 12 1],[1 13 1],[2 13 1],[3 13 1],[4 13 1]};
+selection  = {[1 1 2],[1 3 2],[1 5 1],[2 5 1],[1 6 1],[2 6 1],[1 7 1],[1 8 1],[1 9 1],[1 10 1],[1 12 1],[1 13 1],[1 14 1],[1 15 1],[1 17 1],[2 17 1],[3 17 1],[4 17 1]};
 for i = 1:numel(selection)
     label{i,1} = pOPs{selection{i}(1),selection{i}(2)};
     for j = 1:numel(aGEs)
@@ -999,19 +814,19 @@ end
 
 sEt          = {'NMR - $\mathit{q}\mathrm{(28}\mathit{d}\mathrm{)}$','IMR - $\mathit{q}\mathrm{(12}\mathit{m}\mathrm{)}$','U5MR - $\mathit{q}\mathrm{(60}\mathit{m}\mathrm{)}$'};;
 vARs         = {models models models};
-lABs         = {{1} {2} {3 4} {5 6} {7 8 9} {10 11 12} {13 14 15 16}};
+lABs         = {{1} {2} {3 4} {5 6} {7 8 9 10} {11 12 13 14} {15 16 17 18}};
 tABleBAyEs(sEt,vARs,foRMaT,lABs,nOTe,label,cell2mat(table),0.200,0.060,[]);
-saveas(gcf,char(pATh + "Results/Table 3.png"));
+exportgraphics(gcf,char(pATh + "Results/Table_3.png"),'Resolution',RESolUTioN);
 clear table label temp
 
 tAU{1}       = ", " + string(sprintf('%0.1f',TaBlE.tAU{1,1}(1))) + "-" + string(sprintf('%0.1f',TaBlE.tAU{1,1}(2)));
 tAU{2}       = ", " + string(sprintf('%0.1f',TaBlE.tAU{1,3}(1))) + "-" + string(sprintf('%0.1f',TaBlE.tAU{1,3}(2)));
 tAU{3}       = ", " + string(sprintf('%0.1f',TaBlE.tAU{1,7}(1))) + "-" + string(sprintf('%0.1f',TaBlE.tAU{1,7}(2)));
-tAU{4}       = ", " + string(sprintf('%0.1f',TaBlE.tAU{1,10}(1))) + "-" + string(sprintf('%0.1f',TaBlE.tAU{1,10}(2)));
-sEt          = {"$\textrm{Cluster 1" + tAU{1} + "}$","$\textrm{Cluster 2" + tAU{2} + "}$","$\textrm{DHS VII" + tAU{3} + "}$","$\textrm{MICS 6" + tAU{4} + "}$"};
-DHS          = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$'};
+tAU{4}       = ", " + string(sprintf('%0.1f',TaBlE.tAU{1,12}(1))) + "-" + string(sprintf('%0.1f',TaBlE.tAU{1,12}(2)));
+sEt          = {"$\textrm{" + cLUsTEr{1} + tAU{1} + "}$","$\textrm{" + cLUsTEr{2} + tAU{2} + "}$","$\textrm{DHS VII" + tAU{3} + "}$","$\textrm{MICS 6" + tAU{4} + "}$"};
+DHS          = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$','$\textit{Kaduna}$'};
 vARs         = {models models DHS DHS};
-selection    = [1 2 3 4 7 8 9 10 11 12];
+selection    = [1 2 3 4 7 8 9 10 11 12 13 14];
 for i = 1:size(TaBlE.q,1)
     for j = 1:numel(selection)
         bOx{i,j}  = prctile(TaBlE.q{i,selection(j)}(5,2:end),[50 2.5 97.5])*1000;
@@ -1021,25 +836,560 @@ end
 lABs         = {{1} {4 5} {6 7} {8 9}};
 nOTe         = {'$\textrm{Attributes}$/$\textrm{Sample}$','$\textit{Bootstrapping}$ $\mathrm{p50}$/$\mathit{[p2.5,p97.5]}$'};
 tABleBAyEs(sEt,vARs,foRMaT,lABs,nOTe,pOPh,cell2mat(bOx),0.175,0.070,[]);
-saveas(gcf,char(pATh + "Results/Table 4 NMR.png"));
+exportgraphics(gcf,char(pATh + "Results/Table_4_NMR.png"),'Resolution',RESolUTioN);
 
 tABleBAyEs(sEt,vARs,foRMaT,lABs,nOTe,pOPh,cell2mat(bOx2),0.175,0.070,[]);
-saveas(gcf,char(pATh + "Results/Table 5 U5MR.png"));
+exportgraphics(gcf,char(pATh + "Results/Table_5_U5MR.png"),'Resolution',RESolUTioN);
+
+
+
+P                        = cell(0);
+selection                = {[1 1],[1 3],[2 5],[2 6],[1 7],[1 12],[1 17]};
+selectionT               = {[1 1],[1 3],[3 5],[3 6],[1 7],[1 12],[5 17]};
+LAB                      = {'Neonatal mortality rate $\mathit{q}\mathrm{(28}\mathit{d}\mathrm{)}$','Infant mortality rate $\mathit{q}\mathrm{(12}\mathit{m}\mathrm{)}$','Under-five mortality rate $\mathit{q}\mathrm{(60}\mathit{m}\mathrm{)}$'};
+load(char(pATh + "Results/paleTTe.mat"),'paleTTe');
+coloR                    = paleTTe([1 2 3 5 7 4 8]);
+
+mPIX                     = 538756;
+pix                      = 1/37.7952755906;
+z                        = min(sqrt(mPIX/((10*3)*(10*2)/pix^2)),1);
+fi                       = figure('Color',[1 1 1],'Position',z*10*[0 0 3 2]/pix,'Theme','light');
+axes1                    = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
+hold(axes1,'on');
+TL                       = tiledlayout(2,3,'Padding','compact','TileSpacing','compact');
+
+for i = 1:6
+    nexttile(i)
+    if i > 3
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.XScale                = 'log';
+        ax{i}.XAxis.TickLabelFormat = '%.1f';
+        ax{i}.YAxis.TickLabelFormat = '%.2f';
+        ax{i}.XTick                 = .1./(2.^(9:-1:-2))*1000;
+        ax{i}.XAxis.MinorTickValues = 10:10:200;
+        xlim([6.25 200])
+        xlabel('$\mathit{deaths}$ $\mathit{per}$ $\mathit{1000}$ $\mathit{births}$ (log scale)','Interpreter','latex','FontSize',11*z);
+        ylabel('$\mathit{kernel}$ $\mathit{density}$','Interpreter','latex','FontSize',11*z);
+        title(char(string(char(96 + i)) + ". " + string(LAB{i - 3})),'Interpreter','latex');
+    else
+        d                           = scatter(datetime('01-Jan-2021'),0);
+        delete(d)
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.YAxis.TickLabelFormat = '%.1f';
+        ax{i}.YMinorGrid            = 'on';
+        ax{i}.XMinorGrid            = 'on';
+        ax{i}.XAxis.TickLabelFormat = 'yyyy';
+        ax{i}.XTick                 = datetime(2012:2:2026,1,1);
+        ax{i}.XAxis.MinorTickValues = datetime(2012:2026,1,1);
+        ax{i}.YScale                = 'log';
+        ax{i}.YAxis.TickLabelFormat = '%.1f';
+        ax{i}.YTick                 = .1./(2.^(9:-1:-2))*1000;
+        ax{i}.YAxis.MinorTickValues = 10:10:200;
+        ylim([6.25 200])
+        xlabel('$\mathit{year}$','Interpreter','latex','FontSize',11*z);
+        ylabel('$\mathit{deaths}$ $\mathit{per}$ $\mathit{1000}$ $\mathit{births}$ (log scale)','Interpreter','latex','FontSize',11*z);
+        xlim([datetime(2012,1,1) datetime(2026,1,1)]);
+        title(char(string(char(96 + i)) + ". " + string(LAB{i})),'Interpreter','latex','FontSize',12*z);
+    end
+    grid on;
+    box on;
+    hold on;
+end
+
+for i = 1:6
+    nexttile(i)
+    if i > 3
+        mf  = 4.0;
+        ylim([0 mf])
+        for j = 1:numel(selection)
+            q{j} = TaBle.q{selection{j}(1),selection{j}(2)}(aGEs(i - 3),:);
+            q{j} = recode(q{j},NaN,eps);
+            if numel(q{j}) == R + 1
+                [f{j},xi{j}] = ksdensity(log(max(q{j}(2:end),eps)));
+                xi{j}        = exp(xi{j})*1000;
+                pc{j}        = prctile(q{j}(2:end),tHtiles)*1000;
+                [g{j},~]     = ksdensity(log(q{j}(2:end)),log(pc{j}/1000));
+            else
+                xi{j}        = kron(q{j}(2:3),ones(1,2))*1000;
+                f{j}         = [0,mf,mf,0];
+                pc{j}        = q{j}*1000;
+                g{j}         = ones(1,numel(tHtiles))*mf;
+            end
+            P{end + 1} = plot(max(xi{j},eps),f{j},'color',coloR{j},'LineWidth',1.00*z);
+        end
+        for j = 1:numel(selection)
+            P{end + 1} = fill(max(xi{j},eps),f{j},coloR{j},'FaceAlpha',.05,'EdgeAlpha',0.25,'LineStyle',':','EdgeColor',coloR{j});
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(1),eps),[0 g{j}(1)],'color',coloR{j},'LineWidth',1.00*z,'LineStyle',':');
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(2),eps),[0 g{j}(2)],'color',coloR{j},'LineWidth',0.50*z);
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(3),eps),[0 g{j}(3)],'color',coloR{j},'LineWidth',0.50*z);
+        end
+        if i == 5
+            for j = 1:numel(selection)
+                leGend{j} = pOPs{selection{j}(1),selection{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    else
+        for j = 1:numel(selectionT)
+            tAU{j} = TaBle.tAU{selectionT{j}(1),selectionT{j}(2)};
+            if numel(tAU{j}) > 2
+                q{j} = TaBle.q{selectionT{j}(1),selectionT{j}(2)}{1 + mod(i + 2,3)};
+            else
+                q{j} = kron(ones(2,1),TaBle.q{selectionT{j}(1),selectionT{j}(2)}(aGEs(1 + mod(i + 2,3)),:));
+            end
+            if size(q{j},2) == R + 1
+                q{j} = prctile(q{j}(:,2:end)',tHtiles)'*1000;
+            else
+                q{j} = q{j}*1000;
+            end
+            P{end + 1} = fill([tAU{j};flip(tAU{j})],max([q{j}(:,2);flip(q{j}(:,3))],eps),coloR{j},'FaceAlpha',.05,'EdgeAlpha',1.00*z,'LineStyle','-','EdgeColor',coloR{j});
+        end
+        
+        for j = 1:numel(selectionT)
+            P{end + 1} = plot(tAU{j},q{j}(:,1),'color',coloR{j},'LineWidth',1.0*z,'LineStyle',':');
+        end
+        if i == 2
+            for j = 1:numel(selectionT)
+                leGend{j} = pOPs{selectionT{j}(1),selectionT{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_1.png"),'Resolution',RESolUTioN);
+for i = 1:numel(P)
+    delete(P{i})
+end
+clear leGend P
+
+P                        = cell(0);
+selection                = {[7 1],[8 1],[2 9],[3 9],[2 14],[3 14]};
+selectionT               = {[7 1],[8 1],[2 9],[3 9],[2 14],[3 14]};
+for i = 1:6
+    nexttile(i)
+    if i > 3
+        mf  = 4.0;
+        ylim([0 mf])
+        for j = 1:numel(selection)
+            q{j} = TaBle.q{selection{j}(1),selection{j}(2)}(aGEs(i - 3),:);
+            q{j} = recode(q{j},NaN,eps);
+            if numel(q{j}) == R + 1
+                [f{j},xi{j}] = ksdensity(log(max(q{j}(2:end),eps)));
+                xi{j}        = exp(xi{j})*1000;
+                pc{j}        = prctile(q{j}(2:end),tHtiles)*1000;
+                [g{j},~]     = ksdensity(log(q{j}(2:end)),log(pc{j}/1000));
+            else
+                xi{j}        = kron(q{j}(2:3),ones(1,2))*1000;
+                f{j}         = [0,mf,mf,0];
+                pc{j}        = q{j}*1000;
+                g{j}         = ones(1,numel(tHtiles))*mf;
+            end
+            P{end + 1} = plot(max(xi{j},eps),f{j},'color',coloR{j},'LineWidth',1.00*z);
+        end
+        for j = 1:numel(selection)
+            P{end + 1} = fill(max(xi{j},eps),f{j},coloR{j},'FaceAlpha',.05,'EdgeAlpha',0.25,'LineStyle',':','EdgeColor',coloR{j});
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(1),eps),[0 g{j}(1)],'color',coloR{j},'LineWidth',1.00*z,'LineStyle',':');
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(2),eps),[0 g{j}(2)],'color',coloR{j},'LineWidth',0.50*z);
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(3),eps),[0 g{j}(3)],'color',coloR{j},'LineWidth',0.50*z);
+        end
+        if i == 5
+            for j = 1:numel(selection)
+                leGend{j} = pOPs{selection{j}(1),selection{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    else
+        for j = 1:numel(selectionT)
+            tAU{j} = TaBle.tAU{selectionT{j}(1),selectionT{j}(2)};
+            if numel(tAU{j}) > 2
+                q{j} = TaBle.q{selectionT{j}(1),selectionT{j}(2)}{1 + mod(i + 2,3)};
+            else
+                q{j} = kron(ones(2,1),TaBle.q{selectionT{j}(1),selectionT{j}(2)}(aGEs(1 + mod(i + 2,3)),:));
+            end
+            if size(q{j},2) == R + 1
+                q{j} = prctile(q{j}(:,2:end)',tHtiles)'*1000;
+            else
+                q{j} = q{j}*1000;
+            end
+            P{end + 1} = fill([tAU{j};flip(tAU{j})],max([q{j}(:,2);flip(q{j}(:,3))],eps),coloR{j},'FaceAlpha',.05,'EdgeAlpha',1.00*z,'LineStyle','-','EdgeColor',coloR{j});
+        end
+        
+        for j = 1:numel(selectionT)
+            P{end + 1} = plot(tAU{j},q{j}(:,1),'color',coloR{j},'LineWidth',1.0*z,'LineStyle',':');
+        end
+        if i == 2
+            for j = 1:numel(selectionT)
+                leGend{j} = pOPs{selectionT{j}(1),selectionT{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_2.png"),'Resolution',RESolUTioN);
+for i = 1:numel(P)
+    delete(P{i})
+end
+clear leGend P
+
+P                        = cell(0);
+selection                = {[7 3],[8 3],[2 10],[3 10],[2 15],[3 15]};
+selectionT               = {[7 3],[8 3],[2 10],[3 10],[2 15],[3 15]};
+for i = 1:6
+    nexttile(i)
+    if i > 3
+        mf  = 4.0;
+        ylim([0 mf])
+        for j = 1:numel(selection)
+            q{j} = TaBle.q{selection{j}(1),selection{j}(2)}(aGEs(i - 3),:);
+            q{j} = recode(q{j},NaN,eps);
+            if numel(q{j}) == R + 1
+                [f{j},xi{j}] = ksdensity(log(max(q{j}(2:end),eps)));
+                xi{j}        = exp(xi{j})*1000;
+                pc{j}        = prctile(q{j}(2:end),tHtiles)*1000;
+                [g{j},~]     = ksdensity(log(q{j}(2:end)),log(pc{j}/1000));
+            else
+                xi{j}        = kron(q{j}(2:3),ones(1,2))*1000;
+                f{j}         = [0,mf,mf,0];
+                pc{j}        = q{j}*1000;
+                g{j}         = ones(1,numel(tHtiles))*mf;
+            end
+            P{end + 1} = plot(max(xi{j},eps),f{j},'color',coloR{j},'LineWidth',1.00*z);
+        end
+        for j = 1:numel(selection)
+            P{end + 1} = fill(max(xi{j},eps),f{j},coloR{j},'FaceAlpha',.05,'EdgeAlpha',0.25,'LineStyle',':','EdgeColor',coloR{j});
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(1),eps),[0 g{j}(1)],'color',coloR{j},'LineWidth',1.00*z,'LineStyle',':');
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(2),eps),[0 g{j}(2)],'color',coloR{j},'LineWidth',0.50*z);
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(3),eps),[0 g{j}(3)],'color',coloR{j},'LineWidth',0.50*z);
+        end
+        if i == 5
+            for j = 1:numel(selection)
+                leGend{j} = pOPs{selection{j}(1),selection{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    else
+        for j = 1:numel(selectionT)
+            tAU{j} = TaBle.tAU{selectionT{j}(1),selectionT{j}(2)};
+            if numel(tAU{j}) > 2
+                q{j} = TaBle.q{selectionT{j}(1),selectionT{j}(2)}{1 + mod(i + 2,3)};
+            else
+                q{j} = kron(ones(2,1),TaBle.q{selectionT{j}(1),selectionT{j}(2)}(aGEs(1 + mod(i + 2,3)),:));
+            end
+            if size(q{j},2) == R + 1
+                q{j} = prctile(q{j}(:,2:end)',tHtiles)'*1000;
+            else
+                q{j} = q{j}*1000;
+            end
+            P{end + 1} = fill([tAU{j};flip(tAU{j})],max([q{j}(:,2);flip(q{j}(:,3))],eps),coloR{j},'FaceAlpha',.05,'EdgeAlpha',1.00*z,'LineStyle','-','EdgeColor',coloR{j});
+        end
+        
+        for j = 1:numel(selectionT)
+            P{end + 1} = plot(tAU{j},q{j}(:,1),'color',coloR{j},'LineWidth',1.0*z,'LineStyle',':');
+        end
+        if i == 2
+            for j = 1:numel(selectionT)
+                leGend{j} = pOPs{selectionT{j}(1),selectionT{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_3.png"),'Resolution',RESolUTioN);
+for i = 1:numel(P)
+    delete(P{i})
+end
+clear leGend P
+
+coloR                    = paleTTe([1 1 1 1 1 2 7 4 8]);
+P                        = cell(0);
+selection                = {[2 1],[3 1],[4 1],[5 1],[6 1],[2 5],[1 9],[1 14],[1 17]};
+selectionT               = {[2 1],[3 1],[4 1],[5 1],[6 1],[3 5],[1 9],[1 14],[5 17]};
+for i = 1:6
+    nexttile(i)
+    if i > 3
+        mf  = 4.0;
+        ylim([0 mf])
+        for j = 1:numel(selection)
+            q{j} = TaBle.q{selection{j}(1),selection{j}(2)}(aGEs(i - 3),:);
+            q{j} = recode(q{j},NaN,eps);
+            if numel(q{j}) == R + 1
+                [f{j},xi{j}] = ksdensity(log(max(q{j}(2:end),eps)));
+                xi{j}        = exp(xi{j})*1000;
+                pc{j}        = prctile(q{j}(2:end),tHtiles)*1000;
+                [g{j},~]     = ksdensity(log(q{j}(2:end)),log(pc{j}/1000));
+            else
+                xi{j}        = kron(q{j}(2:3),ones(1,2))*1000;
+                f{j}         = [0,mf,mf,0];
+                pc{j}        = q{j}*1000;
+                g{j}         = ones(1,numel(tHtiles))*mf;
+            end
+            P{end + 1} = plot(max(xi{j},eps),f{j},'color',coloR{j},'LineWidth',1.00*z);
+        end
+        for j = 1:numel(selection)
+            P{end + 1} = fill(max(xi{j},eps),f{j},coloR{j},'FaceAlpha',.05,'EdgeAlpha',0.25,'LineStyle',':','EdgeColor',coloR{j});
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(1),eps),[0 g{j}(1)],'color',coloR{j},'LineWidth',1.00*z,'LineStyle',':');
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(2),eps),[0 g{j}(2)],'color',coloR{j},'LineWidth',0.50*z);
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(3),eps),[0 g{j}(3)],'color',coloR{j},'LineWidth',0.50*z);
+        end
+        if i == 5
+            for j = 1:numel(selection)
+                leGend{j} = pOPs{selection{j}(1),selection{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    else
+        for j = 1:numel(selectionT)
+            tAU{j} = TaBle.tAU{selectionT{j}(1),selectionT{j}(2)};
+            if numel(tAU{j}) > 2
+                q{j} = TaBle.q{selectionT{j}(1),selectionT{j}(2)}{1 + mod(i + 2,3)};
+            else
+                q{j} = kron(ones(2,1),TaBle.q{selectionT{j}(1),selectionT{j}(2)}(aGEs(1 + mod(i + 2,3)),:));
+            end
+            if size(q{j},2) == R + 1
+                q{j} = prctile(q{j}(:,2:end)',tHtiles)'*1000;
+            else
+                q{j} = q{j}*1000;
+            end
+            P{end + 1} = fill([tAU{j};flip(tAU{j})],max([q{j}(:,2);flip(q{j}(:,3))],eps),coloR{j},'FaceAlpha',.05,'EdgeAlpha',1.00*z,'LineStyle','-','EdgeColor',coloR{j});
+        end
+        
+        for j = 1:numel(selectionT)
+            P{end + 1} = plot(tAU{j},q{j}(:,1),'color',coloR{j},'LineWidth',1.0*z,'LineStyle',':');
+        end
+        if i == 2
+            for j = 1:numel(selectionT)
+                leGend{j} = pOPs{selectionT{j}(1),selectionT{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_4.png"),'Resolution',RESolUTioN);
+for i = 1:numel(P)
+    delete(P{i})
+end
+clear leGend P
+
+
+P                        = cell(0);
+selection                = {[2 3],[3 3],[4 3],[5 3],[6 3],[2 6],[1 10],[1 15],[1 17]};
+selectionT               = {[2 3],[3 3],[4 3],[5 3],[6 3],[3 6],[1 10],[1 15],[5 17]};
+for i = 1:6
+    nexttile(i)
+    if i > 3
+        mf  = 4.0;
+        ylim([0 mf])
+        for j = 1:numel(selection)
+            q{j} = TaBle.q{selection{j}(1),selection{j}(2)}(aGEs(i - 3),:);
+            q{j} = recode(q{j},NaN,eps);
+            if numel(q{j}) == R + 1
+                [f{j},xi{j}] = ksdensity(log(max(q{j}(2:end),eps)));
+                xi{j}        = exp(xi{j})*1000;
+                pc{j}        = prctile(q{j}(2:end),tHtiles)*1000;
+                [g{j},~]     = ksdensity(log(q{j}(2:end)),log(pc{j}/1000));
+            else
+                xi{j}        = kron(q{j}(2:3),ones(1,2))*1000;
+                f{j}         = [0,mf,mf,0];
+                pc{j}        = q{j}*1000;
+                g{j}         = ones(1,numel(tHtiles))*mf;
+            end
+            P{end + 1} = plot(max(xi{j},eps),f{j},'color',coloR{j},'LineWidth',1.00*z);
+        end
+        for j = 1:numel(selection)
+            P{end + 1} = fill(max(xi{j},eps),f{j},coloR{j},'FaceAlpha',.05,'EdgeAlpha',0.25,'LineStyle',':','EdgeColor',coloR{j});
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(1),eps),[0 g{j}(1)],'color',coloR{j},'LineWidth',1.00*z,'LineStyle',':');
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(2),eps),[0 g{j}(2)],'color',coloR{j},'LineWidth',0.50*z);
+            P{end + 1} = plot(ones(2,1)*max(pc{j}(3),eps),[0 g{j}(3)],'color',coloR{j},'LineWidth',0.50*z);
+        end
+        if i == 5
+            for j = 1:numel(selection)
+                leGend{j} = pOPs{selection{j}(1),selection{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    else
+        for j = 1:numel(selectionT)
+            tAU{j} = TaBle.tAU{selectionT{j}(1),selectionT{j}(2)};
+            if numel(tAU{j}) > 2
+                q{j} = TaBle.q{selectionT{j}(1),selectionT{j}(2)}{1 + mod(i + 2,3)};
+            else
+                q{j} = kron(ones(2,1),TaBle.q{selectionT{j}(1),selectionT{j}(2)}(aGEs(1 + mod(i + 2,3)),:));
+            end
+            if size(q{j},2) == R + 1
+                q{j} = prctile(q{j}(:,2:end)',tHtiles)'*1000;
+            else
+                q{j} = q{j}*1000;
+            end
+            P{end + 1} = fill([tAU{j};flip(tAU{j})],max([q{j}(:,2);flip(q{j}(:,3))],eps),coloR{j},'FaceAlpha',.05,'EdgeAlpha',1.00*z,'LineStyle','-','EdgeColor',coloR{j});
+        end
+        
+        for j = 1:numel(selectionT)
+            P{end + 1} = plot(tAU{j},q{j}(:,1),'color',coloR{j},'LineWidth',1.0*z,'LineStyle',':');
+        end
+        if i == 2
+            for j = 1:numel(selectionT)
+                leGend{j} = pOPs{selectionT{j}(1),selectionT{j}(2)}{1};
+            end
+            P{end + 1} = legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+        end
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_5.png"),'Resolution',RESolUTioN);
+for i = 1:numel(P)
+    delete(P{i})
+end
+clear leGend P
+
+
+LAB                      = {'Age-Specific Fertility Rates','Age-Specific Mortality Rates','Cumulative Probability of Dying'};
+z                        = min(sqrt(mPIX/((10*3)*(10*2)/pix^2)),1);
+fi                       = figure('Color',[1 1 1],'Position',z*10*[0 0 3 2]/pix,'Theme','light');
+axes1                    = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
+hold(axes1,'on');
+TL                       = tiledlayout(2,3,'Padding','compact','TileSpacing','compact');
+
+for i = 1:6
+    nexttile(i)
+    if isequal(mod(i,3),1)
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.XAxis.TickLabelFormat = '%.0f';
+        ax{i}.YAxis.TickLabelFormat = '%.2f';
+        ax{i}.YMinorGrid            = 'on';
+        ax{i}.XMinorGrid            = 'on';
+        ax{i}.XAxis.TickValues      = 10.00:5.00:55.00;
+        ax{i}.XAxis.MinorTickValues = 10.00:2.50:55.00;
+        xlim([10 55])
+        ylim([0 0.35])
+        xlabel('$\textit{age}$ $\textit{(in years)}$','Interpreter','latex','FontSize',11*z);
+        ylabel('$\mathit{_nf_x}$','Interpreter','latex','FontSize',11*z);
+        title(char("$\textrm{" + string(char(96 + i)) + ". " + string(LAB{1}) + ", " + cLUsTEr{floor((i - 1)/3) + 1} + "}$"),'Interpreter','latex');
+    elseif isequal(mod(i,3),2)
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.YScale                = 'log';
+        ax{i}.XAxis.TickLabelFormat = '%.1f';
+        ax{i}.YAxis.TickLabelFormat = '%.2f';
+        ax{i}.YMinorGrid            = 'on';
+        ax{i}.XMinorGrid            = 'on';
+        ax{i}.XAxis.TickValues      = 0.00:1.00:5.00;
+        ax{i}.XAxis.MinorTickValues = x{1};
+        xlim([-0.1 5])
+        xlabel('$\textit{age}$ $\textit{(in years)}$','Interpreter','latex','FontSize',11*z);
+        ylabel('$\mathit{_nM_x}$','Interpreter','latex','FontSize',11*z);
+        title(char("$\textrm{" + string(char(96 + i)) + ". " + string(LAB{2}) + ", " + cLUsTEr{floor((i - 1)/3) + 1} + "}$"),'Interpreter','latex');
+    else
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.XAxis.TickLabelFormat = '%.1f';
+        ax{i}.XAxis.TickLabelFormat = '%.1f';
+        ax{i}.YAxis.TickLabelFormat = '%.2f';
+        ax{i}.YMinorGrid            = 'on';
+        ax{i}.XMinorGrid            = 'on';
+        ax{i}.XAxis.TickValues      = 0.00:1.00:5.00;
+        ax{i}.XAxis.MinorTickValues = x{1};
+        xlim([-0.1 5])
+        xlabel('$\textit{age}$ $\textit{(in years)}$','Interpreter','latex','FontSize',11*z);
+        ylabel('$\mathit{q}\mathrm{(}\mathit{x}\mathrm{)}$','Interpreter','latex','FontSize',11*z);
+        title(char("$\textrm{" + string(char(96 + i)) + ". " + string(LAB{3}) + ", " + cLUsTEr{floor((i - 1)/3) + 1} + "}$"),'Interpreter','latex');
+    end
+    grid on;
+    box on;
+    hold on;
+end
+
+for i = 1:6
+    nexttile(i)
+    if isequal(floor((i - 1)/3) + 1,1)
+        sEL    = [1 9 14];
+        leGend = {'$\textrm{SARMAAN, Kano}$','$\textrm{DHS VII, Kano}$','$\textrm{MICS 6, Kano}$'};
+        coloR  = paleTTe([2 7 4]);
+    else
+        sEL    = [3 10 15];
+        leGend = {'$\textrm{SARMAAN, Kaduna}$','$\textrm{DHS VII, Kaduna}$','$\textrm{MICS 6, Kaduna}$'};
+        coloR  = paleTTe([3 7 4]);
+    end
+
+    if isequal(mod(i,3),1)
+        Y   = TaBle.F(1,sEL);
+        X   = 10:55;
+    elseif isequal(mod(i,3),2)
+        Y   = TaBle.m(1,sEL);
+        X   = (x{1}(1:end - 1) + x{1}(2:end))/2;
+    else
+        Y   = TaBle.q(1,sEL);
+        X   = x{1};
+    end
+
+    for j = 1:numel(Y)
+        plot(NaN,NaN,'color',coloR{j},'LineWidth',1.00*z);
+    end
+    for j = numel(Y):-1:1
+        plot(X,Y{j},'color',[coloR{j} 0.025],'LineWidth',0.50*z);
+        plot(X,prctile(Y{j}(:,2:end)',50)','color',coloR{j},'LineWidth',1.50*z);
+    end
+    if isequal(mod(i,3),2)
+        legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_6.png"),'Resolution',RESolUTioN);
+
+
+
+options                  = detectImportOptions(char(pATh + "GPSlimits.csv")); 
+options.VariableTypes{1} = 'string';
+lIMiTs                   = readtable(char(pATh + "GPSlimits.csv"),options);
+country                  = {'NG'};
+
+leGend                   = {};
+coloR                    = paleTTe([2 3]);
+z                        = min(sqrt(mPIX/((20)*(16)/pix^2)),1);
+fi                       = figure('Color',[1 1 1],'Position',z*[0 0 20 16]/pix,'Theme','light');
+axes1                    = geoaxes('Parent',fi,'Position',[0.05 0.05 0.95 0.95]);
+hold(axes1,'on');
+
+geobasemap grayland
+ax                       = gca;
+ax.FontName              = 'Times New Roman';
+ax.FontSize              = 8*z;
+limits                   = lIMiTs(lIMiTs.country == 'NG',:);
+geolimits([limits.minLAT limits.maxLAT],[limits.minLONG limits.maxLONG])
+
+for j = 1:numel(cLUsTEr)
+    leGend{j}  = char("$\textrm{" + cLUsTEr{j} + "}");
+    sEL        = (bASe.k == 1 & bASe.cluster == cLUsTEr{j});
+    S          = geoscatter(bASe.latitude(sEL),bASe.longitude(sEL),2.5,'filled','MarkerEdgeColor',coloR{j},'MarkerFaceColor',coloR{j},'MarkerFaceAlpha',.65);
+end
+legend(leGend,'Interpreter','latex','FontSize',11*z,'FontAngle','oblique','Location','southoutside','NumColumns',3,'Box','off');
+exportgraphics(gcf,char(pATh + "Results/mAP_1.png"),'Resolution',RESolUTioN);
+
+geobasemap satellite
+exportgraphics(gcf,char(pATh + "Results/mAP_2.png"),'Resolution',RESolUTioN);
+exportgraphics(gcf,char(pATh + "Results/mAP_3.png"),'Resolution',RESolUTioN);
+
 
 
 clear
 pATh         = "/Users/lshjr3/Documents/SARMAAN/";
+RESolUTioN   = 300;
 load(char(pATh + "Results/bASe.mat"),'bASe','DHSnigeria','MICSnigeria');
 load(char(pATh + "Results/ReSAmPLiNG.mat"));
-dATaDHS      = dATaDHS(end - 2:end);
-dATaMICS     = dATaMICS(end - 2:end);
+dATaDHS      = dATaDHS(end - 4:end - 1);
+dATaMICS     = dATaMICS(end - 4:end - 1);
 
-
-list         = {'$\textrm{Cluster 1}$','$\textrm{Cluster 2}$'};
+cLUsTEr      = {'Kano','Kaduna'};
+list         = {char("$\textrm{" + cLUsTEr{1} + "}$"),char("$\textrm{" + cLUsTEr{2} + "}$")};
 models       = {'$\textit{15-49}$','$\textit{10-55}$'};
 listDHS      = {'$\textrm{DHS VII}$'};
 listMICS     = {'$\textrm{MICS 6}$'};
-modelsDHS    = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$'};
+modelsDHS    = {'$\textit{National}$','$\textit{North West}$','$\textit{Kano}$','$\textit{Kaduna}$'};
 modelsMICS   = modelsDHS;
 
 for i = 1:numel(list)
@@ -1137,142 +1487,368 @@ foRMaT       = {'%0.2f','%0.2f','%0.2f'};
 
 nOTe         = {'$\textrm{Attributes}$/$\textrm{Instrument}$','$\mathit{Bootstrapping}$ $\mathrm{p50}$/$\mathit{[p2.5,p97.5]}$'};
 tABleBAyEs(sEt,vARs,foRMaT,lABs,nOTe,pOPsd,cell2mat(bOx),0.190,0.065,[]);
-saveas(gcf,char(pATh + "Results/Table 6.png"));
+exportgraphics(gcf,char(pATh + "Results/Table_6.png"),'Resolution',RESolUTioN);
 
 
 
+clear
+pATh                  = "/Users/lshjr3/Documents/SARMAAN/";
+load(char(pATh + "Results/bASe.mat"),'bASe','DHSnigeria','MICSnigeria');
+RESolUTioN            = 300;
+coloR                 = {[0.05 0.05 0.05],[0.95 0.00 0.95],[0.85 0.35 0.01],[0.00 0.00 0.75],[0.45 0.65 0.20],[0.65 0.10 0.20],[0.00 0.55 0.65]};
+sAMplE                = {'Children','Women'};
+vAR                   = {'year','month of the year','day of the month'};
+sOUrCe                = {'$\textrm{SARMAAN}$','$\textrm{DHS VII}$','$\textrm{MICS 6}$'};
+aLPha                 = [.2 .1 .1];
 
-
-
-
-pix                      = 1/37.7952755906;
-fi                       = figure('Color',[1 1 1]);
-fi.Position              = [0 0 14 7]/pix;
-fi.Theme                 = 'light';
-axes1                    = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
+pix                   = 1/37.7952755906*0.75;
+fi                    = figure('Color',[1 1 1]);
+fi.Theme              = 'light';
+fi.Position           = [0 0 numel(sAMplE) numel(vAR)]*7/pix;
+axes1                 = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
 hold(axes1,'on');
-TL                       = tiledlayout(1,2,'Padding','compact','TileSpacing','compact');
-coloR                    = {[0.65 0.10 0.20],[0.00 0.55 0.65],[0.00 0.00 0.75],[0.95 0.00 0.95],[0.05 0.05 0.05],[0.85 0.35 0.01],[0.45 0.65 0.20]};
-for i = 1:2
-    if i == 1
-        nexttile(i)
-        ax{i}                       = gca;
-        ax{i}.FontName              = 'Times New Roman';
-        ax{i}.FontSize              = 10;
-        ax{i}.XAxis.TickLabelFormat = '%.1f';
-        ax{i}.YAxis.TickLabelFormat = '%.2f';
-        ax{i}.XAxis.TickValues      = 0.00:1.00:5.00;
-        ax{i}.XAxis.MinorTickValues = 0.00:0.25:5.00;
-        ax{i}.XAxis.MinorTick       = 'off';
-        ax{i}.YAxis.MinorTick       = 'off';
-        xlim([-0.1 5])
-        
-        title('$\textrm{cumulative probability of dying}$','Interpreter','latex','FontName','Times New Roman','FontSize',12);        
-        xlabel('$\textit{age (in years)}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        ylabel('$\mathit{q}\mathrm{(}\mathrm{x}\mathrm{)}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        grid on;
-        grid minor;
-        box on;
-        hold on;
-        for j = 1:numel(dATa)
-            plot(NaN,NaN,'color',coloR{j},'LineWidth',1.1);
-        end
-        
-        for j = 1:numel(dATa)
-            q                           = TaBle.q{1,j};
-            q                           = [prctile(q(:,2:end)',50)',q(:,2:end)];
-            plot(x{1},q(:,2:end),'color',[coloR{j} .01],'LineWidth',0.5);
-            plot(x{1},q(:,1),'color',coloR{j},'LineWidth',1.1);
-        end
-        legend(pOP,'Interpreter','latex','FontName','Times New Roman','FontSize',9,'FontAngle','oblique','Location','southoutside','NumColumns',2,'Box','off');
-    else
-        nexttile(i)
-        ax{i}                       = gca;
-        ax{i}.FontName              = 'Times New Roman';
-        ax{i}.FontSize              = 10;
-        ax{i}.XAxis.TickLabelFormat = '%.1f';
-        ax{i}.YAxis.TickLabelFormat = '%.2f';
-        ax{i}.YScale                = 'log';        
-        ax{i}.XAxis.TickValues      = 0.00:1.00:5.00;
-        ax{i}.XAxis.MinorTickValues = 0.00:0.50:5.00;
-        xlim([-0.1 5])
-        xlabel('$\textit{age (in years)}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        
-        ax{i}.XAxis.MinorTick       = 'off';
-        ax{i}.YAxis.MinorTick       = 'off';
-        ylabel('$\mathit{_nM_x}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        title('$\textrm{age-specific mortality rates}$','Interpreter','latex','FontName','Times New Roman','FontSize',12);        
+TL                    = tiledlayout(numel(vAR),numel(sAMplE),'Padding','compact','TileSpacing','compact');
 
-        grid on;
-        grid minor;
-        box on;
-        hold on;
-        
-        for j = 1:numel(dATa)
-            m                           = -log((1 - TaBle.q{1,j}(2:end,:))./(1 - TaBle.q{1,j}(1:end - 1,:)))./n;
-            plot(x{1}(1:end - 1) + n/2,m,'color',[.1 .1 .1 .01],'LineWidth',0.5);
-            plot(x{1}(1:end - 1) + n/2,m(:,2:end),'color',[coloR{j} .01],'LineWidth',0.5);
-            plot(x{1}(1:end - 1) + n/2,m(:,1),'color',coloR{j},'LineWidth',1.1);
-            saveas(gcf,char(pATh + "ReSuLTs/U5MR.png"));
-        end
+for i = 1:numel(sAMplE)*numel(vAR)
+    nexttile(i)
+    ax{i}                          = gca;
+    ax{i}.FontName                 = 'Times New Roman';
+    ax{i}.FontSize                 = 10;
+    ax{i}.XAxis.TickLabelFormat    = '%.0f';
+    ax{i}.YAxis.TickLabelFormat    = '%.2f';
+    ax{i}.XAxis.MinorTick          = 'off';
+    ax{i}.YAxis.MinorTick          = 'off';
+    ax{i}.LabelFontSizeMultiplier  = 1;
+    
+    if i <= numel(sAMplE)
+        title(char("$\textrm{DOB: " + sAMplE{2 - mod(i,2)} + "}$"),'Interpreter','latex','FontSize',11);
     end
+    xlabel(char("$\textit{" + vAR{ceil(i/2)} + "}$"),'Interpreter','latex','FontSize',10);
+    if isequal(mod(i,numel(sAMplE)),1)
+        ylabel('$\textit{probability density function}$','Interpreter','latex','FontSize',10);
+    end
+    grid on;
+    box on;
+    hold on;
+    
+    if isequal(mod(i,numel(sAMplE)),1)
+        base = datevec(bASe.B(bASe.birth == 'livebirth'));
+        base = base(:,1:3);
+        DHS  = datevec(DHSnigeria.B_min(~isnat(DHSnigeria.B_min)));
+        DHS  = DHS(:,1:3);
+        MICS = datevec(MICSnigeria.B_min(~isnat(MICSnigeria.B_min)));
+        MICS = MICS(:,1:3);
+    else
+        base = datevec(bASe.DOB(bASe.k == 1));
+        base = base(:,1:3);
+        DHS  = datevec(DHSnigeria.DOB(DHSnigeria.k == 1));
+        DHS  = [DHS(:,1:2) NaN(size(DHS,1),1)];
+        MICS = datevec(MICSnigeria.DOB_min(MICSnigeria.k == 1));
+        MICS = [MICS(:,1:2) NaN(size(MICS,1),1)];
+    end
+    j    = ceil(i/numel(sAMplE));    
+    dATa = {base(:,j),DHS(:,j),MICS(:,j)};
+    
+    if isequal(j,2)
+        xlim([.5 12.5])
+    elseif isequal(j,3)
+        xlim([.5 31.5])
+    end
+    
+    for j = 1:numel(dATa)
+        histogram(dATa{j},'Normalization','pdf','FaceColor',coloR{j},'FaceAlpha',aLPha(j),'EdgeColor',coloR{j},'EdgeAlpha',min(aLPha(j)*1.75,1));
+    end
+    if isequal(i,numel(sAMplE)*numel(vAR) - 1)
+        legend(sOUrCe,'Interpreter','latex','FontSize',9,'FontAngle','oblique','Location','southoutside','NumColumns',numel(sOUrCe),'Box','off');
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_8.png"),'Resolution',RESolUTioN);
+
+
+
+
+
+clear
+pATh                  = "/Users/lshjr3/Documents/SARMAAN/";
+load(char(pATh + "Results/bASe.mat"),'bASe','DHSnigeria','MICSnigeria');
+RESolUTioN            = 300;
+
+bASe                  = bASe(bASe.age >= 15 & bASe.age <  50,:);
+bASe.id               = cumsum(bASe.k == 1);
+bASe                  = bASe(bASe.birth == 'livebirth',{'B_min','B_max','DOB_min','DOB_max','id'});
+bASe.t                = zeros(size(bASe,1),1);
+bASe.t(2:end)         = bASe.id(1:end - 1) == bASe.id(2:end) & bASe.B_min(1:end - 1) == bASe.B_min(2:end);
+bASe                  = bASe(~bASe.t,:);
+rng(0);
+p                     = rand(size(bASe,1),1);
+bASe.B                = eXAcTTime(bASe.B_min).*p + eXAcTTime(bASe.B_max).*(1 - p);
+bASe                  = sortrows(bASe,{'id','B'});
+for i = 1:bASe.id(end)
+    sEL                = find(bASe.id == i);
+    K                  = numel(sEL);
+    bASe.k(sEL)        = (1:K)';
+    bASe.K(sEL)        = K;
+end
+
+sEL                   = (bASe.k == 1);
+p                     = rand(sum(sEL),1);
+bASe.DOB              = repelem(eXAcTTime(bASe.DOB_min(sEL)).*p + eXAcTTime(bASe.DOB_max(sEL)).*(1 - p),bASe.K(sEL));
+bASe.id               = cumsum(sEL);
+dATa{1}               = bASe(:,{'B','DOB','k','K','id'});
+clear p ID bASe sEL K i
+
+DHSnigeria            = DHSnigeria(~isnat(DHSnigeria.B_min),:);
+sEL                   = (DHSnigeria.k == 1);
+DHSnigeria.id         = cumsum(sEL);
+p                     = rand(sum(sEL),1);
+DHSnigeria.DOB        = repelem(eXAcTTime(DHSnigeria.DOB(sEL)).*p + eXAcTTime(datetime(year(DHSnigeria.DOB(sEL)),month(DHSnigeria.DOB(sEL)) + 1,1) - 1).*(1 - p),DHSnigeria.K(sEL));
+DHSnigeria.t          = zeros(size(DHSnigeria,1),1);
+DHSnigeria.t(2:end)   = DHSnigeria.id(1:end - 1) == DHSnigeria.id(2:end) & DHSnigeria.B_min(1:end - 1) == DHSnigeria.B_min(2:end);
+DHSnigeria            = DHSnigeria(~DHSnigeria.t,:);
+DHSnigeria.B          = eXAcTTime(DHSnigeria.B_min);
+DHSnigeria            = sortrows(DHSnigeria(:,{'B','DOB','id'}),{'id','B'});
+for i = 1:DHSnigeria.id(end)
+    sEL                = find(DHSnigeria.id == i);
+    K                  = numel(sEL);
+    DHSnigeria.k(sEL)  = (1:K)';
+    DHSnigeria.K(sEL)  = K;
+end
+dATa{2}               = DHSnigeria(:,{'B','DOB','k','K','id'});
+clear p DHSnigeria sEL
+
+MICSnigeria           = MICSnigeria(~isnat(MICSnigeria.B_min),:);
+sEL                   = (MICSnigeria.k == 1);
+MICSnigeria.id        = cumsum(sEL);
+p                     = rand(sum(sEL),1);
+MICSnigeria.DOB       = repelem(eXAcTTime(MICSnigeria.DOB_min(sEL)).*p + eXAcTTime(MICSnigeria.DOB_max(sEL)).*(1 - p),MICSnigeria.K(sEL));
+MICSnigeria.t         = zeros(size(MICSnigeria,1),1);
+MICSnigeria.t(2:end)  = MICSnigeria.id(1:end - 1) == MICSnigeria.id(2:end) & MICSnigeria.B_min(1:end - 1) == MICSnigeria.B_min(2:end);
+MICSnigeria           = MICSnigeria(~MICSnigeria.t,:);
+p                     = rand(size(MICSnigeria,1),1);
+MICSnigeria.B         = eXAcTTime(MICSnigeria.B_min).*p + eXAcTTime(MICSnigeria.B_max).*(1 - p);
+MICSnigeria           = sortrows(MICSnigeria(:,{'B','DOB','id'}),{'id','B'});
+for i = 1:MICSnigeria.id(end)
+    sEL                = find(MICSnigeria.id == i);
+    K                  = numel(sEL);
+    MICSnigeria.k(sEL) = (1:K)';
+    MICSnigeria.K(sEL) = K;
+end
+dATa{3}               = MICSnigeria(:,{'B','DOB','k','K','id'});
+clear p MICSnigeria sEL
+
+for i = 1:numel(dATa)
+    mATrIx      = NaN(dATa{i}.id(end),max(dATa{i}.K) + 2);
+    mATrIx(:,1) = dATa{i}.DOB(dATa{i}.k == 1);
+    for j = 1:max(dATa{i}.K)
+        sEL               = dATa{i}.id(dATa{i}.k == j);
+        mATrIx(sEL,1 + j) = dATa{i}.B(dATa{i}.k == j);
+    end
+    mATrIx      = mATrIx(:,2:end) - mATrIx(:,1:end - 1);
+    dATa{i}     = mATrIx;
+end
+
+coloR                 = {[0.05 0.05 0.05],[0.95 0.00 0.95],[0.85 0.35 0.01],[0.00 0.00 0.75],[0.45 0.65 0.20],[0.65 0.10 0.20],[0.00 0.55 0.65]};
+sOUrCe                = {'$\textrm{SARMAAN}$','$\textrm{DHS VII}$','$\textrm{MICS 6}$','$\textit{unlikely}$'};
+aLPha                 = [.2 .1 .1];
+pix                   = 1/37.79527559068*0.75;
+fi                    = figure('Color',[1 1 1]);
+fi.Position           = [0 0 3 2]*7/pix;
+fi.Theme              = 'light';
+axes1                 = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
+hold(axes1,'on');
+TL                    = tiledlayout(2,3,'Padding','compact','TileSpacing','compact');
+
+for i = 1:6
+    nexttile(i)
+    ax{i}                          = gca;
+    ax{i}.FontName                 = 'Times New Roman';
+    ax{i}.FontSize                 = 10;
+    ax{i}.XAxis.TickLabelFormat    = '%.0f';
+    ax{i}.YAxis.TickLabelFormat    = '%.2f';
+    ax{i}.XTickLabelRotation       = 0;
+    ax{i}.YTickLabelRotation       = 0;
+    ax{i}.LabelFontSizeMultiplier  = 1;
+
+    if isequal(i,1)
+        f                              = 10;
+        title('$\textrm{Maternal debut}$','Interpreter','latex','FontSize',11);
+        xlabel('$\textit{age}$','Interpreter','latex','FontSize',10);
+        ax{i}.XAxis.TickValues         = 5:5:50;
+        xlim([5 35]);
+    else
+        f                              = 26*7/365.25;
+        title(char("$\textrm{Birth interval " + (i - 1) + "}$"),'Interpreter','latex','FontSize',11);
+        xlabel('$\textit{years}$','Interpreter','latex','FontSize',10);
+        ax{i}.XAxis.TickValues         = 0:1:10;
+        xlim([0 7]);
+    end
+
+    if isequal(mod(i,3),1)
+        ylabel('$\textit{probability density function}$','Interpreter','latex','FontSize',9);
+    end
+    grid on;
+    box on;
+    hold on;
+        
+    for j = 1:numel(dATa)
+        histogram(dATa{j}(:,i),'Normalization','pdf','FaceColor',coloR{j},'FaceAlpha',aLPha(j),'EdgeColor',coloR{j},'EdgeAlpha',min(aLPha(j)*1.75,1));
+    end
+
+    F                              = ax{i}.YLim;
+    fill([0 f f 0],kron(F,ones(1,2)),coloR{7},'FaceAlpha',.10,'EdgeAlpha',0.25,'LineWidth',0.25,'LineStyle','-','EdgeColor',coloR{7});
+    ylim(F);
+    if isequal(i,5)
+        legend(sOUrCe,'Interpreter','latex','FontSize',9,'Location','southoutside','NumColumns',numel(sOUrCe),'Box','off');
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_9.png"),'Resolution',RESolUTioN);
+
+
+clear
+pATh                  = "/Users/lshjr3/Documents/SARMAAN/";
+load(char(pATh + "Results/bASe.mat"),'bASe');
+load(char(pATh + "Results/paleTTe.mat"),'paleTTe');
+RESolUTioN            = 300;
+
+coloR                 = paleTTe([2 3 7 4 5 1]);
+bASe                  = bASe(bASe.k == 1,{'sTArt','eNd','sUBmiSSion','enumeratorid','cluster'});
+cLUsTEr               = {'Kano','Kaduna'};
+
+for i = 1:numel(cLUsTEr)
+    tEMp{i}            = bASe(bASe.cluster == cLUsTEr{i},:);
+    tEMp{i}.S          = datetime(year(tEMp{i}.sUBmiSSion),month(tEMp{i}.sUBmiSSion),day(tEMp{i}.sUBmiSSion));
+    tEMp{i}.duration   = minutes(tEMp{i}.sUBmiSSion - tEMp{i}.sTArt);
+    T                  = tabulate(days(tEMp{i}.S - min(tEMp{i}.S)));
+    S{i}               = table(T(:,1) + min(tEMp{i}.S),T(:,2),'VariableNames',{'date','women'});
+    S{i}.cumulative    = cumsum(S{i}.women);
+
+    T                  = tabulate(tEMp{i}.enumeratorid);
+    T                  = T(T(:,2) > 0,1);
+    for j = 1:numel(T)
+        s         = tEMp{i}.duration(tEMp{i}.enumeratorid == T(j));
+        s         = [T(j) numel(s) prctile(s,[50 2.5 5 10 25 75 90 95 97.5])];
+        P{i}(j,:) = table(s(1),s(2),s(3),s(4),s(5),s(6),s(7),s(8),s(9),s(10),s(11),'VariableNames',{'enumerator','women','p50','p2','p5','p10','p25','p75','p90','p95','p97'});
+    end
+    P{i}               = flip(sortrows(P{i},{'p50'}));
 end
 
 
-fi                       = figure('Color',[1 1 1]);
-fi.Position              = [0 0 14 7]/pix;
-fi.Theme                 = 'light';
+mPIX                     = 538756;
+pix                      = 1/37.7952755906;
+LAB                      = {'Data collection schedule','Time to completion','Time to completion (enumerator)'};
+z                        = min(sqrt(mPIX/((10*3)*(10*2)/pix^2)),1);
+fi                       = figure('Color',[1 1 1],'Position',z*10*[0 0 3 2]/pix,'Theme','light');
+axes1                    = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
+hold(axes1,'on');
+TL                       = tiledlayout(2,3,'Padding','compact','TileSpacing','compact');
+
+for i = 1:6
+    nexttile(i)
+    if isequal(mod(i,3),1)
+        d                           = scatter(datetime('01-Jan-2021'),0);
+        delete(d)
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.YAxis.TickLabelFormat = '%.1f';
+        ax{i}.YMinorGrid            = 'on';
+        ax{i}.XMinorGrid            = 'on';
+        ax{i}.XAxis.TickLabelFormat = 'dd.MM.yyyy';
+        xlim(datetime(2025,[5 8],1))
+        xlabel('$\textit{date of submission}$','Interpreter','latex','FontSize',11*z);
+        ylabel('$\textit{women interviewed (000)}$','Interpreter','latex','FontSize',11*z);
+        title(char("$\textrm{" + string(char(96 + i)) + ". " + string(LAB{1}) + ", " + cLUsTEr{floor((i - 1)/3) + 1} + ", W = " + sum(S{floor((i - 1)/3) + 1}.women) + "}$"),'Interpreter','latex');
+    elseif isequal(mod(i,3),2)
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.XAxis.TickLabelFormat = '%.0f';
+        ax{i}.YAxis.TickLabelFormat = '%.1f';
+        ax{i}.YMinorGrid            = 'on';
+        ax{i}.XMinorGrid            = 'on';
+        ax{i}.XAxis.TickValues      = 0:100:1200;
+        ax{i}.XAxis.MinorTickValues = 0:25:1200;
+        xlim([-100 800])
+        xlabel('$\textit{time (in munutes)}$','Interpreter','latex','FontSize',11*z);
+        ylabel('$\textit{probability density function}$','Interpreter','latex','FontSize',11*z);
+        title(char("$\textrm{" + string(char(96 + i)) + ". " + string(LAB{2}) + ", " + cLUsTEr{floor((i - 1)/3) + 1} + "}$"),'Interpreter','latex');
+    else
+        ax{i}                       = gca;
+        ax{i}.FontName              = 'Times New Roman';
+        ax{i}.FontSize              = 10*z;
+        ax{i}.XAxis.TickLabelFormat = '%.0f';
+        ax{i}.YAxis.TickLabelFormat = '%.0f';
+        ax{i}.YMinorGrid            = 'on';
+        ax{i}.XMinorGrid            = 'on';
+        ax{i}.XAxis.TickValues      = 0:100:1200;
+        ax{i}.XAxis.MinorTickValues = 0:25:1200;
+        xlim([-100 800])
+        xlabel('$\textit{time (in munutes)}$','Interpreter','latex','FontSize',11*z);
+        ylabel('$\textit{enumerator}$','Interpreter','latex','FontSize',11*z);
+        title(char("$\textrm{" + string(char(96 + i) + ". " + string(LAB{3})) + ", " + cLUsTEr{floor((i - 1)/3) + 1} + "}$"),'Interpreter','latex');
+    end
+    grid on;
+    box on;
+    hold on;
+end
+
+for i = 1:6
+    nexttile(i)
+    h = floor((i - 1)/3) + 1;
+
+    if isequal(mod(i,3),1)
+        plot(S{h}.date,S{h}.women/1000,'color',coloR{h},'LineWidth',1.25*z);
+    elseif isequal(mod(i,3),2)
+        sEL = tEMp{h}.duration(tEMp{h}.duration > -100 & tEMp{h}.duration < 800);
+        histogram(sEL,200,'Normalization','pdf','FaceColor',coloR{h},'FaceAlpha',.15,'EdgeColor',coloR{h},'EdgeAlpha',.35);
+        F   = ax{i}.YLim;
+        fill([-100 0 0 -100],kron(F,ones(1,2)),coloR{3},'FaceAlpha',.10,'EdgeAlpha',0.25,'LineWidth',0.25,'LineStyle','-','EdgeColor',coloR{3});
+        ylim(F);
+        legend({char("$\textrm{ W = " + sum(S{h}.women) + ", E = " + size(P{h},1) + "}$"),'$\textit{unlikely duration}'},'Interpreter','latex','FontSize',9,'Location','southoutside','NumColumns',1,'Box','off');
+    else
+        plot(NaN,NaN,'color','k','LineWidth',2.0);
+        F   = [0 size(P{h},1) + 1];
+        fill([-100 0 0 -100],kron(F,ones(1,2)),coloR{h},'FaceAlpha',.10,'EdgeAlpha',0.25,'LineWidth',0.25,'LineStyle','-','EdgeColor',coloR{3});
+        ylim(F);
+
+        for j = 1:size(P{h},1)
+            A = table2array(P{h}(j,4:end));
+            A = [A(1:numel(A)/2)' flip(A(numel(A)/2 + 1:end))'];
+            for k = 1:size(A,1)
+                fill([A(k,1) A(k,2) A(k,2) A(k,1)],kron(j - [1 0],ones(1,2)),coloR{k + 2},'FaceAlpha',.15,'EdgeAlpha',0.00,'LineWidth',0.01,'LineStyle','-','EdgeColor',coloR{k + 2});
+            end
+            plot([1 1]*P{h}.p50(j),j - [1 0],'color','k','LineWidth',2.0);
+        end
+        legend({'$\textrm{median duration}$','$\textit{unlikely duration}'},'Interpreter','latex','FontSize',9,'Location','southoutside','NumColumns',1,'Box','off');
+    end
+end
+exportgraphics(gcf,char(pATh + "Results/Figure_7.png"),'Resolution',RESolUTioN);
+
+
+
+clear
+pATh                     = "/Users/lshjr3/Documents/SARMAAN/";
+load(char(pATh + "Results/bASe.mat"),'bASe');
+load(char(pATh + "Results/paleTTe.mat"),'paleTTe');
+RESolUTioN               = 300;
+coloR                    = paleTTe([2 3 7 4 5 1]);
+cLUsTEr                  = {'Kano','Kaduna'};
+
+mPIX                     = 538756;
+pix                      = 1/37.7952755906;
+z                        = min(sqrt(mPIX/((15)*(15*2)/pix^2)),1);
+fi                       = figure('Color',[1 1 1],'Position',z*15*[0 0 2 1]/pix,'Theme','light');
 axes1                    = axes('Parent',fi,'Position',[0.025 0.025 0.975 0.975]);
 hold(axes1,'on');
 TL                       = tiledlayout(1,2,'Padding','compact','TileSpacing','compact');
 
 for i = 1:2
-    if i == 1
-        nexttile(i)
-        ax{i}                       = gca;
-        ax{i}.FontName              = 'Times New Roman';
-        ax{i}.FontSize              = 10;
-        ax{i}.XAxis.TickLabelFormat = '%.0f';
-        ax{i}.YAxis.TickLabelFormat = '%.2f';
-        ax{i}.XAxis.TickValues      = 0:5:55;
-        ax{i}.XAxis.MinorTickValues = 0:2.5:55;
-        ax{i}.XAxis.MinorTick       = 'off';
-        ax{i}.YAxis.MinorTick       = 'off';
-        xlim([10 55])
-        
-        title('$\textrm{age specific fertility rates}$','Interpreter','latex','FontName','Times New Roman','FontSize',12);        
-        xlabel('$\textit{age (in years)}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        ylabel('$\mathit{_nf_x}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-        grid on;
-        grid minor;
-        box on;
-        hold on;
-        
-        for j = 1:numel(dATa)
-            plot(NaN,NaN,'color',coloR{j},'LineWidth',1.1);
-        end
-        
-        f                           = 0;
-        for j = 1:numel(dATa)
-            F                           = TaBle.F{1,j};
-            F                           = [prctile(F(:,2:end)',50)',F(:,2:end)];            
-            plot(min(bASe.age):max(bASe.age),F(:,1),'color',coloR{j},'LineWidth',1.1);
-            plot(min(bASe.age):max(bASe.age),F(:,2:end),'color',[coloR{j} .01],'LineWidth',0.5);
-            f                           = max(max(F(:,1))*1.15,f);
-        end
-        
-        f                           = round(f*20,0)/20;
-        ylim([0 f])
-        plot(15*ones(1,2),[0 f],'color','k','LineWidth',0.75,'LineStyle','--');
-        plot(50*ones(1,2),[0 f],'color','k','LineWidth',0.75,'LineStyle','--');
-        legend(pOPw,'Interpreter','latex','FontName','Times New Roman','FontSize',9,'FontAngle','oblique','Location','southoutside','NumColumns',2,'Box','off');
-    else
     nexttile(i)
     d                           = scatter(datetime('01-Jan-2021'),0);
     delete(d)
     ax{i}                       = gca;
     ax{i}.FontName              = 'Times New Roman';
-    ax{i}.FontSize              = 10;
+    ax{i}.FontSize              = 10*z;
     ax{i}.YAxis.TickLabelFormat = '%.1f';
     ax{i}.YMinorGrid            = 'on';
     ax{i}.XMinorGrid            = 'on';
@@ -1280,62 +1856,39 @@ for i = 1:2
     ax{i}.XTick                 = datetime(2016:2:2026,1,1);
     ax{i}.XAxis.MinorTickValues = datetime(2016:2026,1,1);
     ax{i}.YTick                 = 0:1:5;
-    ax{i}.YAxis.MinorTickValues = 0:.5:5;
-    ylabel('$\textit{age (in years)}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
-    xlabel('$\textit{year}$','Interpreter','latex','FontName','Times New Roman','FontSize',11);
+    ax{i}.YAxis.MinorTickValues = [(0:7:28)/365.25,[(2:1:12),(15:3:24),(36:12:60)]/12]';
+    ylabel('$\textit{age (in years)}$','Interpreter','latex','FontSize',11*z);
+    xlabel('$\textit{year}$','Interpreter','latex','FontSize',11*z);
     xlim([datetime(2016,1,1) datetime(2026,1,1)]);
     ylim([0 8])
-    title('$\textit{Lexis diagram}$','Interpreter','latex','FontName','Times New Roman','FontSize',12);
+    title(char("$\textrm{" + string(char(96 + i)) + ". " + cLUsTEr{i} + "}$"),'Interpreter','latex','FontSize',12*z);
     clear d
     grid on;
     box on;
     hold on;
-    end
 end
 
-nexttile(2);
-r                     = rand(size(bASe,1),2);
-B                     = r(:,1).*datenum(bASe.B_min) + (1 - r(:,1)).*datenum(bASe.B_max(j));
-xd                    = r(:,2).*bASe.D_min + (1 - r(:,2)).*bASe.D_max;
-D                     = datetime(datevec(B + xd));
-B                     = datetime(datevec(B));
-I                     = bASe.interview;
-D                     = min(D,I - 30*rand(size(bASe,1),1));
-B                     = min(B,D - xd);
-xd                    = xd/365.25;
-for j = 1:numel(dATa)
-    scatter(D(dATa{j}{1}),xd(dATa{j}{1}),1.5,'filled','MarkerFaceColor',coloR{j},'MarkerFaceAlpha',.25,'MarkerEdgeColor',coloR{j},'MarkerEdgeAlpha',.25);
+bASe                     = bASe(:,{'B_min','B_max','D_min','D_max','interview','cluster'});
+sEL                      = ~isnan(bASe.D_min);
+bASe.D_max(sEL)          = max(min(max(days(bASe.interview(sEL) - bASe.B_max(sEL)),0),bASe.D_max(sEL)),bASe.D_min(sEL));
+
+r                        = rand(size(bASe,1),2);
+bASe.B                   = bASe.B_min + r(:,1).*days(min(bASe.B_max,bASe.interview) - bASe.B_min);
+s                        = max(days(bASe.interview - bASe.B),0);
+bASe.xd                  = bASe.D_min + r(:,2).*min(s,(bASe.D_max - bASe.D_min));
+bASe.D                   = bASe.B + bASe.xd;
+
+for i = 1:2
+    nexttile(i);
+    sEL = (bASe.cluster == cLUsTEr{i} & ~isnat(bASe.D));
+    scatter(bASe.D(sEL),bASe.xd(sEL)/365.25,2.5*z,'filled','MarkerFaceColor',coloR{3},'MarkerFaceAlpha',.25,'MarkerEdgeColor',coloR{3},'MarkerEdgeAlpha',.25);
+    
+    A   = [min(bASe.interview(bASe.cluster == cLUsTEr{i})) max(bASe.interview(bASe.cluster == cLUsTEr{i})) datetime(2026,1,1)];
+    fill([A(1) A(2) A(2) A(1)],kron([0 8],ones(1,2)),coloR{1},'FaceAlpha',.25,'EdgeAlpha',0.00,'LineWidth',0.01,'LineStyle','-','EdgeColor',coloR{1});
+    fill([A(2) A(3) A(3) A(2)],kron([0 8],ones(1,2)),coloR{2},'FaceAlpha',.25,'EdgeAlpha',0.00,'LineWidth',0.01,'LineStyle','-','EdgeColor',coloR{2});
+    legend({char("$\textrm{deaths = " + sum(sEL) + "}$"),'$\textrm{data collection}',char("$\textrm{unlikely reports, D = " + sum(bASe.B_min(sEL) + bASe.D_min(sEL) > bASe.interview(sEL)) + ", B = " + sum(bASe.B(sEL) > bASe.interview(sEL)) + "}$")},'Interpreter','latex','FontSize',9,'Location','southoutside','NumColumns',1,'Box','off');
 end
-plot(min(I) + [0 0],[0 8],'color','m','LineWidth',0.75,'LineStyle','-');
-plot(max(I) + [0 0],[0 8],'color','m','LineWidth',0.75,'LineStyle','-');
-legend(pOPd,'Interpreter','latex','FontName','Times New Roman','FontSize',9,'FontAngle','oblique','Location','southoutside','NumColumns',2,'Box','off');
-saveas(gcf,char(pATh + "ReSuLTs/lEXis.png"));
+exportgraphics(gcf,char(pATh + "Results/Figure_10.png"),'Resolution',RESolUTioN);
 
 
-
-
-
-
-options                  = detectImportOptions(char(pATh + "GPSlimits.csv")); 
-options.VariableTypes{1} = 'string';
-lIMiTs                   = readtable(char(pATh + "GPSlimits.csv"),options);
-country                  = {'NG'};
-
-pix                      = 1/37.7952755906;
-fi                       = figure('Color',[1 1 1]);
-fi.Position              = [0 0 25 14]/pix;
-axes1                    = geoaxes('Parent',fi,'Position',[0.05 0.05 0.95 0.95]);
-hold(axes1,'on');
-geobasemap grayterrain
-ax                       = gca;
-ax.FontName              = 'Times New Roman';
-ax.FontSize              = 8;
-limits     = lIMiTs(lIMiTs.country == 'NG',:);
-geolimits([limits.minLAT limits.maxLAT],[limits.minLONG limits.maxLONG])
-
-for j = 1:2
-    sEL        = (bASe.k == 1 & bASe.cluster == j);
-    S          = geoscatter(bASe.latitude(sEL),bASe.longitude(sEL),5,'filled','MarkerEdgeColor',coloR{j},'MarkerFaceColor',coloR{j},'MarkerFaceAlpha',.65);
-end
-saveas(gcf,char(pATh + "ReSuLTs/mAP.png"));
 

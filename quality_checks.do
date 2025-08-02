@@ -25,13 +25,19 @@ use       `Mortality_Mortality', clear
 rename     start                sTArt
 rename     end                  eNd
 rename     _submission_time     sUBmiSSion
+replace    sUBmiSSion         = sUBmiSSion + ".000+00:00"
 
 local      lISt               = "sTArt eNd sUBmiSSion"
 foreach var of local lISt {
 	rename    `var' temp
+	generate   adj                = clock("2020-01-01" + " " + substr(temp,-5,2) + ":00:00","YMD hms") - clock("2020-01-01" + " " + "00:00:00","YMD hms") if substr(temp,-1,1) != "Z"
+	recode     adj             (. = 0)
+	replace    adj                = - adj             if substr(temp,-6,1) == "-"
+	
 	generate   double `var'       = clock(substr(temp,1,10) + " " + substr(temp,12,8),"YMD hms")
 	format     %tcMon_dd,_CCYY_hh:MM:SS_AM `var'
-	drop       temp
+	replace   `var'               = `var' - adj
+	drop       temp adj
 	}
 order     `lISt'
 
@@ -60,7 +66,8 @@ replace    Water              = 2                     if q27     == "Covered wel
 replace    Water              = 2                     if q27     == "Spring"
 replace    Water              = 2                     if q27     == "Borehole"
 replace    Water              = 2                     if q27     == "Others"  & substr(Sq27,1,4) != "Tank" & substr(Sq27,-4,.) != "tank" 
-local      GPS                = "cluster sTArt eNd sUBmiSSion deviceid _id enumerator latitude longitude hOUseHOLd household HH_size Water Electricity state localG ward UR"
+replace    enumeratorid       = substr(enumeratorid,-4,.)
+local      GPS                = "cluster sTArt eNd sUBmiSSion deviceid _id enumerator latitude longitude hOUseHOLd household HH_size Water Electricity state localG ward UR _validation"
 keep      `GPS'
 
 destring   latitude longitude, replace
@@ -196,6 +203,8 @@ replace    D_min              = D_min/12*365.25       if tIMe    == "m"
 replace    D_max              = D_max/12*365.25       if tIMe    == "m"
 replace    D_min              = D_min*365.25          if tIMe    == "y"
 replace    D_max              = D_max*365.25          if tIMe    == "y"
+
+replace    D_max              = max(max(min(B_max + D_max,interview) - B_max,0),D_min)   if D_min != .
 
 generate   birth              = "livebirth"           if OuTComE == "Livebirth"   | OuTComE == "ReClass Livebirth" 
 replace    birth              = "stillbirth"          if OuTComE == "Stillbirth"  | OuTComE == "ReClass Stillbirth" 
@@ -433,6 +442,10 @@ sort       WM1 WM2 WM3 B_min
 bysort     WM1 WM2 WM3:  generate   bidx      = _n
 keep       WM1 WM2 WM3 B_* D_* sex multiple mother bidx
 merge m:1  WM1 WM2 WM3 using `mics', nogenerate
+
+replace    B_max          = max(min(B_max,interview),B_min)
+replace    D_maxB         = max(max(min(B_max + D_max,interview) - B_max,0),D_min)   if D_min != .    
+
 sort       caseid B_min
 bysort     caseid:  generate   k              = _n
 bysort     caseid:  generate   K              = _N 
@@ -472,10 +485,20 @@ drop       w
 
 generate   DOB            = mdy(v009,1,v010)
 generate   interview      = mdy(v006,v016,v007)
-generate   Birth          = mdy(b1,b17,b2)
-replace    Birth          = mdy(b1 + 1,1,b2) - 1                            if Birth == . & b17   != .
 
-format     %tdDD/NN/CCYY interview Birth DOB
+sort       b3 b17
+if b17[1] == . {
+	generate   B_min          = mdy(b3 - floor((b3 - 1)/12)*12,1,floor((b3 - 1)/12) + 1900)                        if b3    != .
+	generate   B_max          = mdy(b3 + 1 - floor(b3/12)*12,1,floor(b3/12) + 1900)                                if b3    != .
+	}
+else {
+	generate   B_min          = mdy(b3 - floor((b3 - 1)/12)*12,b17,floor((b3 - 1)/12) + 1900)                      if b3    != .
+	replace    B_min          = mdy(b3 + 1 - floor((b3 - 1)/12)*12,1,floor((b3 - 1)/12) + 1900) - 1                if B_min == . & b3  != .
+	generate   B_max          = B_min
+	}
+
+replace    B_max          = max(min(B_max,interview),B_min)	
+format     %tdDD/NN/CCYY interview B_* DOB
 rename     b4 sex
 rename     v012 age
 rename     v169a mobile
@@ -491,13 +514,14 @@ replace    D_max          = 24*365.25/12                                        
 replace    D_min          = (b6 - 300)*365.25                                        if b6   != .   & b6 >= 300 
 replace    D_max          = (b6 - 300 + 1)*365.25                                    if b6   != .   & b6 >= 300
 replace    D_min          = 0                                                        if b6   == 398 | b6 == 399  
-replace    D_max          = max(year(interview) - year(Birth),0)*365.25              if b6   == 398 | b6 == 399
+replace    D_max          = max(year(interview) - year(B_min),0)*365.25              if b6   == 398 | b6 == 399
+replace    D_max          = max(max(min(B_max + D_max,interview) - B_max,0),D_min)   if D_min != .
 
 generate   W              = v005/1000000
 generate   CAL            = "C" + vcal_1                                             if k    == 1 | k  == .
 generate   row            = v018                                                     if k    == 1 | k  == .
-keep       cluster HH respondent age sex interview Birth D_* mobile W bidx caseid DOB k K woman Women iNDeX mother CAL row
-order      cluster HH respondent age sex interview Birth D_* mobile W bidx caseid DOB k K woman Women iNDeX mother CAL row
+keep       cluster HH respondent age sex interview B_* D_* mobile W bidx caseid DOB k K woman Women iNDeX mother CAL row
+order      cluster HH respondent age sex interview B_* D_* mobile W bidx caseid DOB k K woman Women iNDeX mother CAL row
 generate   reproductive = 1
 egen       GO             = cut(age), at(10,15,20,25,30,35,40,45,50,55,60) icodes
 replace    GO             = min(GO,8) + 1
